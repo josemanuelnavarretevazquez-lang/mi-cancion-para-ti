@@ -7,6 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ===== VARIABLES CSS PARA EL EFECTO DE OLA ===== */
+        :root {
+            --accent: #1db954;
+        }
+
         /* ===== RESET Y ESTILOS BASE ===== */
         * {
             margin: 0;
@@ -143,7 +148,8 @@
 
         .spotify-icon {
             font-size: 1.6rem;
-            color: #1db954;
+            color: var(--accent);
+            transition: color 1.5s ease;
         }
 
         .wave-lines {
@@ -178,7 +184,7 @@
             100% { height: 24px; background: #fff; }
         }
 
-        /* ===== BARRA DE PROGRESO ===== */
+        /* ===== BARRA DE PROGRESO (CON EFECTO OLA) ===== */
         .progress-container {
             width: 100%;
             margin-bottom: 8px;
@@ -191,14 +197,26 @@
             cursor: pointer;
             position: relative;
         }
+        
         .progress {
             height: 100%;
             width: 0%;
-            background: #1db954;
+            background: linear-gradient(90deg, var(--accent) 0%, rgba(255,255,255,0.8) 50%, var(--accent) 100%);
+            background-size: 200% 100%;
             border-radius: 3px;
             position: relative;
             transition: width 0.1s linear;
         }
+        
+        .player.playing .progress {
+            animation: moveWave 1.5s linear infinite;
+        }
+
+        @keyframes moveWave {
+            0% { background-position: 200% 0; }
+            100% { background-position: 0% 0; }
+        }
+
         .progress::after {
             content: '';
             position: absolute;
@@ -243,7 +261,7 @@
         }
 
         .control-btn.active {
-            color: #1db954 !important;
+            color: var(--accent) !important;
         }
 
         .control-btn:active {
@@ -264,7 +282,7 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 0 20px rgba(29,185,84,0.5);
-            padding-left: 3px; /* Óptico para el icono play */
+            padding-left: 3px;
         }
 
         .player.playing .play-btn {
@@ -275,7 +293,7 @@
             transform: scale(1.05);
         }
 
-        /* ===== TEXTO Y LIKE ===== */
+        /* ===== TEXTO, LIKE Y VOLUMEN ===== */
         .song-info-container {
             display: flex;
             justify-content: space-between;
@@ -287,6 +305,7 @@
 
         .song-text {
             overflow: hidden;
+            flex-grow: 1;
         }
 
         .song-title {
@@ -305,6 +324,12 @@
             margin-top: 2px;
         }
 
+        .secondary-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
         .like-btn {
             background: none;
             border: none;
@@ -315,11 +340,52 @@
         }
 
         .like-btn.liked {
-            color: #ff4d6d;
+            color: var(--accent);
         }
 
         .like-btn:active {
             transform: scale(1.2);
+        }
+
+        /* ===== CONTROLES DE VOLUMEN ===== */
+        .volume-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .volume-btn {
+            font-size: 1.3rem;
+        }
+
+        .volume-slider-container {
+            position: absolute;
+            bottom: 40px; /* Aparece encima del botón */
+            right: -10px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.7);
+            display: none; /* Oculto por defecto */
+            z-index: 50;
+            animation: fadeVol 0.2s ease;
+        }
+
+        @keyframes fadeVol {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .volume-slider-container.show {
+            display: block;
+        }
+
+        .volume-slider {
+            width: 100px;
+            accent-color: var(--accent);
+            cursor: pointer;
         }
 
         /* ===== BOTÓN SECRETO ===== */
@@ -349,7 +415,6 @@
             transform: translate(-50%, -50%);
             background: rgba(25,25,25,0.95);
             backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
             border-radius: 30px;
             padding: 35px 25px;
             width: 90%;
@@ -365,7 +430,7 @@
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
         .love-message h2 {
-            color: #ff4d6d;
+            color: var(--accent);
             margin-bottom: 15px;
             font-size: 1.5rem;
         }
@@ -376,7 +441,7 @@
             margin-bottom: 20px;
         }
         .close-btn {
-            background: #ff4d6d;
+            background: var(--accent);
             border: none;
             color: white;
             padding: 10px 25px;
@@ -455,18 +520,30 @@
         <div class="controls">
             <button class="control-btn" id="shuffle-btn"><i class="fas fa-random"></i></button>
             <button class="control-btn" id="prev-btn"><i class="fas fa-step-backward"></i></button>
+            <!-- El botón vuelve automáticamente al icono de Play al cambiar de canción -->
             <button class="play-btn" id="play-btn"><i class="fas fa-play"></i></button>
             <button class="control-btn" id="next-btn"><i class="fas fa-step-forward"></i></button>
             <button class="control-btn" id="repeat-btn"><i class="fas fa-redo-alt"></i></button>
         </div>
 
-        <!-- TÍTULO, ARTISTA Y ME GUSTA -->
+        <!-- TÍTULO, ARTISTA, ME GUSTA Y VOLUMEN -->
         <div class="song-info-container">
             <div class="song-text">
                 <h1 class="song-title" id="title"></h1>
                 <p class="artist" id="artist"></p>
             </div>
-            <button class="like-btn" id="likeBtn"><i class="fas fa-heart"></i></button>
+            
+            <div class="secondary-controls">
+                <button class="like-btn" id="likeBtn"><i class="fas fa-heart"></i></button>
+                
+                <!-- Contenedor del Botón y Barra de Volumen -->
+                <div class="volume-container">
+                    <button class="control-btn volume-btn" id="volumeBtn"><i class="fas fa-volume-up"></i></button>
+                    <div class="volume-slider-container" id="volumeSliderContainer">
+                        <input type="range" min="0" max="1" step="0.01" value="1" class="volume-slider" id="volumeSlider">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <button class="secret-btn" id="secretBtn">💌 Tócame</button>
@@ -480,7 +557,7 @@
         // ================================================================
         const playlist = [{
             title: "JOHANA ESMERALDA",
-            artist: "De ti, para ti ❤️",
+            artist: "De mi para ti ❤️",
             src: "JOHANA ESMERALDA.mp3",
             cover: "WhatsApp Image 2026-08-01 at 23.00.20 (1).jpeg",
             theme: "linear-gradient(135deg, #1db954 0%, #191414 100%)", // verde
@@ -489,12 +566,12 @@
             rainColors: ['#ff1744', '#ff5252', '#ff8a80', '#d50000', '#b71c1c']
         }, {
             title: "Mi Solecito de Mi Vida",
-            artist: "Siempre tú 💖",
+            artist: "De mi para ti ❤️",
             src: "Mi Solecito de Mi Vida.mp3",
             cover: "WhatsApp Image 2026-08-01 at 23.00.20.jpeg",
             theme: "linear-gradient(135deg, #9b4dff 0%, #191414 100%)", // morado
             accent: "#9b4dff",
-            rainItems: ['🌻', '🌼', '🟡'], // Solo Flores y Destellos Amarillos
+            rainItems: ['🌻', '🌼', '🟡'], // Solo Flores y destellos amarillos
             rainColors: ['#ffd700', '#ffcc00', '#ffb300', '#ffaa00', '#ffe066']
         }];
 
@@ -508,6 +585,10 @@
         const shuffleBtn = document.getElementById('shuffle-btn');
         const repeatBtn = document.getElementById('repeat-btn');
         const likeBtn = document.getElementById('likeBtn');
+        const volumeBtn = document.getElementById('volumeBtn');
+        const volumeIcon = volumeBtn.querySelector('i');
+        const volumeSliderContainer = document.getElementById('volumeSliderContainer');
+        const volumeSlider = document.getElementById('volumeSlider');
         const progressBar = document.getElementById('progress-bar');
         const progress = document.getElementById('progress');
         const currentTimeEl = document.getElementById('current-time');
@@ -548,12 +629,18 @@
         }
 
         function applyTheme(accentColor) {
+            // Actualiza la variable CSS
+            document.documentElement.style.setProperty('--accent', accentColor);
+
             playerDiv.style.boxShadow = `0 25px 50px rgba(0,0,0,0.7), 0 0 30px ${accentColor}40`;
             cover.style.boxShadow = `0 0 30px ${accentColor}60`;
             coverRing.style.borderColor = `${accentColor}80`;
-            progress.style.background = accentColor;
             playBtn.style.boxShadow = `0 0 20px ${accentColor}80`;
-            document.querySelector('.spotify-icon').style.color = accentColor;
+            
+            // Actualizar botones
+            if(isShuffle) shuffleBtn.style.color = accentColor;
+            if(isRepeat) repeatBtn.style.color = accentColor;
+            if(likeBtn.classList.contains('liked')) likeBtn.style.color = accentColor;
         }
 
         function loadTrack(index, autoPlay = false) {
@@ -622,9 +709,9 @@
                 audio.play().then(() => {
                     playerDiv.classList.add('playing');
                     playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                }).catch(() => alert("Asegúrate de tener el archivo de audio localmente."));
+                }).catch(() => alert("Asegúrate de tener el archivo de audio en tu carpeta local."));
             } else {
-                resetPlayState();
+                resetPlayState(); 
             }
         }
 
@@ -638,12 +725,12 @@
             } else {
                 currentTrack = (currentTrack + 1) % playlist.length;
             }
-            loadTrack(currentTrack, false); // No auto-reproducir para reiniciar el botón a Play
+            loadTrack(currentTrack, false); 
         }
 
         function prevTrack() {
             currentTrack = (currentTrack - 1 + playlist.length) % playlist.length;
-            loadTrack(currentTrack, false); // No auto-reproducir para reiniciar el botón a Play
+            loadTrack(currentTrack, false);
         }
 
         // ================================================================
@@ -655,19 +742,59 @@
 
         shuffleBtn.addEventListener('click', () => {
             isShuffle = !isShuffle;
-            shuffleBtn.classList.toggle('active', isShuffle);
+            const accent = playlist[currentTrack].accent;
+            shuffleBtn.style.color = isShuffle ? accent : '#b3b3b3';
         });
 
         repeatBtn.addEventListener('click', () => {
             isRepeat = !isRepeat;
-            repeatBtn.classList.toggle('active', isRepeat);
+            const accent = playlist[currentTrack].accent;
+            repeatBtn.style.color = isRepeat ? accent : '#b3b3b3';
         });
 
         likeBtn.addEventListener('click', () => {
             likeBtn.classList.toggle('liked');
+            const accent = playlist[currentTrack].accent;
+            likeBtn.style.color = likeBtn.classList.contains('liked') ? accent : '#b3b3b3';
+        });
+
+        // Controles de Volumen
+        volumeBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evita que se cierre instantáneamente
+            volumeSliderContainer.classList.toggle('show');
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            const vol = e.target.value;
+            audio.volume = vol;
+            
+            // Cambiar el icono según el nivel de volumen
+            if (vol == 0) {
+                volumeIcon.className = 'fas fa-volume-mute';
+            } else if (vol < 0.5) {
+                volumeIcon.className = 'fas fa-volume-down';
+            } else {
+                volumeIcon.className = 'fas fa-volume-up';
+            }
+        });
+
+        // Ocultar barra de volumen al hacer clic en cualquier otro lado
+        document.addEventListener('click', (e) => {
+            if (!volumeBtn.contains(e.target) && !volumeSliderContainer.contains(e.target)) {
+                volumeSliderContainer.classList.remove('show');
+            }
         });
 
         progressBar.addEventListener('click', setProgress);
+        progressBar.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            setProgress(e);
+        }, { passive: false });
+        progressBar.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            setProgress(e);
+        }, { passive: false });
+
         audio.addEventListener('timeupdate', updateProgress);
         audio.addEventListener('loadedmetadata', () => {
             durationEl.textContent = formatTime(audio.duration);
@@ -678,7 +805,16 @@
                 audio.currentTime = 0;
                 audio.play();
             } else {
-                nextTrack();
+                if (isShuffle) {
+                    let newIndex;
+                    do {
+                        newIndex = Math.floor(Math.random() * playlist.length);
+                    } while (newIndex === currentTrack && playlist.length > 1);
+                    currentTrack = newIndex;
+                } else {
+                    currentTrack = (currentTrack + 1) % playlist.length;
+                }
+                loadTrack(currentTrack, true);
             }
         });
 
@@ -700,6 +836,7 @@
         // Carga inicial
         window.addEventListener('DOMContentLoaded', () => {
             loadTrack(currentTrack, false);
+            audio.volume = volumeSlider.value; // Asegura que el audio tome el valor inicial del slider
         });
     </script>
 </body>
