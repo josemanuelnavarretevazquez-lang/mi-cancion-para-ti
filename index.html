@@ -2855,16 +2855,18 @@
                     delay: 1600 }, { width: '100%', delay: 2400 }];
                 steps.forEach(step => { setTimeout(() => { heartbeatProgressFill.style.width = step.width; }, step
                     .delay); }); setTimeout(() => { stopHeartbeat();
-                    showScreen(grantedScreen); setTimeout(() => { revealPlayer(); }, 1500); }, 3200); }
+                    showScreen(grantedScreen); setTimeout(() => { enterApp(); }, 1500); }, 3200); }
 
-            function revealPlayer() { grantedScreen.classList.remove('active');
-                playerWrapper.classList.remove('hidden-initially');
-                playerWrapper.classList.add('visible');
+            function enterApp() {
+                grantedScreen.classList.remove('active');
+                // No mostramos el reproductor grande, solo preparamos el audio y la info del mini player
+                playerWrapper.classList.remove('visible'); // por si acaso
                 bottomNav.style.display = 'flex';
-                loadTrack(0, false);
-                startFloatingPhrases();
+                loadTrack(0, false); // carga la primera canción en segundo plano, sin reproducir
+                updateMiniPlayerInfo();
+                showPage('home'); // abrimos directamente la pared de Inicio
                 requestNotificationPermission();
-                updateMiniPlayerVisibility(); }
+            }
 
             // ============ MINI PLAYER ============
             function updateMiniPlayerVisibility() { if (currentPage === null) { miniPlayer.classList.remove('show'); } else {
@@ -2890,21 +2892,31 @@
                 pageSync.classList.remove('show');
                 pageSettings.classList.remove('show'); }
 
-            function showPage(pageName) { hideAllPages();
-                currentPage = pageName; const targetPage = document.getElementById('page' + pageName.charAt(0)
-                    .toUpperCase() + pageName.slice(1)); if (targetPage) { targetPage.classList.add('show'); }
+            function showPage(pageName) {
+                hideAllPages();
+                currentPage = pageName;
+                const targetPage = document.getElementById('page' + pageName.charAt(0).toUpperCase() + pageName.slice(1));
+                if (targetPage) { targetPage.classList.add('show'); }
                 document.querySelectorAll('.nav-item').forEach(item => { item.classList.remove('active-nav'); if (item
-                        .dataset.page === pageName) { item.classList.add('active-nav'); } }); if (pageName === 'home') {
-                    renderWallEntries(); } if (pageName === 'library') { renderLibrary(); } if (pageName === 'sync') {
-                    updateSyncUI(); } if (pageName === 'settings') { romanticModeToggle.checked = body.classList.contains(
-                        'romantic-mode'); }
-                updateMiniPlayerVisibility(); }
+                        .dataset.page === pageName) { item.classList.add('active-nav'); } });
+                // Al navegar a cualquier página, ocultamos el reproductor grande
+                playerWrapper.classList.remove('visible');
+                if (pageName === 'home') { renderWallEntries(); }
+                if (pageName === 'library') { renderLibrary(); }
+                if (pageName === 'sync') { updateSyncUI(); }
+                if (pageName === 'settings') { romanticModeToggle.checked = body.classList.contains('romantic-mode'); }
+                updateMiniPlayerVisibility();
+            }
 
-            function hideAllPagesAndGoToPlayer() { hideAllPages();
+            function hideAllPagesAndGoToPlayer() {
+                hideAllPages();
                 currentPage = null;
                 document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active-nav'));
+                // Mostramos el reproductor grande
+                playerWrapper.classList.add('visible');
+                playerWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 updateMiniPlayerVisibility();
-                playerWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            }
 
             // ============ LIBRARY ============
             function renderLibrary() { libraryList.innerHTML = '';
