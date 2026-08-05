@@ -3,12 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#191414">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="🍌 PLATANO MUSIC">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="Nuestra música, nuestro amor, sincronizados.">
     <title>🍌 PLATANO MUSIC</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIvCfjYwgUExBVEFOTyBNVVNJQyIsCiAgInNob3J0X25hbWUiOiAiUExBVEFOTyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMTkxNDE0IiwKICAidGhlbWVfY29sb3IiOiAiIzE5MTQxNCIsCiAgImRlc2NyaXB0aW9uIjogIk51ZXN0cmEgbcO6c2ljYSwgbnVlc3RybyBhbW9yLCBzaW5jcm9uaXphZG9zLiIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHRleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCc+8J+NjDwvdGV4dD48L3N2Zz4iLAogICAgInNpemVzIjogIjE5MngxOTIiLAogICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICB9XQp9">
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js">
+    </script>
 
     <style>
         :root {
@@ -22,6 +37,12 @@
             --input-bg: rgba(50, 50, 50, 0.7);
             --shadow-accent: 0 0 30px rgba(29, 185, 84, 0.4);
             --transition-speed: 0.4s;
+            --nav-bg: rgba(18, 18, 18, 0.8);
+            --romantic-overlay: 0;
+            --romantic-tint-rose: rgba(255, 182, 193, 0);
+            --romantic-tint-gold: rgba(218, 165, 32, 0);
+            --mini-player-height: 64px;
+            --nav-height: 68px;
         }
 
         * {
@@ -30,12 +51,11 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
-
         html {
             height: 100%;
             height: -webkit-fill-available;
+            scroll-behavior: smooth;
         }
-
         body {
             background: linear-gradient(135deg, #1b5e20 0%, #191414 100%);
             min-height: 100vh;
@@ -45,7 +65,9 @@
             align-items: center;
             font-family: 'Montserrat', sans-serif;
             padding: 20px;
-            overflow: hidden;
+            padding-bottom: 120px;
+            overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
             user-select: none;
             -webkit-user-select: none;
@@ -53,17 +75,42 @@
             color: var(--text-main);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            scroll-behavior: smooth;
         }
-
         body.light-mode {
             --text-main: #191414;
             --text-secondary: #555555;
             --bg-card: rgba(255, 255, 255, 0.7);
             --ring-color: rgba(0, 0, 0, 0.1);
             --player-bg: rgba(255, 255, 255, 0.65);
+            --nav-bg: rgba(255, 255, 255, 0.75);
+        }
+        body.romantic-mode {
+            --romantic-overlay: 0.35;
+            --romantic-tint-rose: rgba(255, 182, 193, 0.12);
+            --romantic-tint-gold: rgba(218, 165, 32, 0.08);
+        }
+        body.romantic-mode .player {
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 50px rgba(255, 105, 180, 0.3), 0 0 80px rgba(218, 165, 32, 0.2);
+        }
+        body.romantic-mode .glow-1 {
+            background: rgba(255, 105, 180, 0.6) !important;
+            filter: blur(70px);
+            opacity: 0.5;
+        }
+        body.romantic-mode .glow-2 {
+            background: rgba(218, 165, 32, 0.55) !important;
+            filter: blur(70px);
+            opacity: 0.45;
+        }
+        body.romantic-mode .rain-item {
+            opacity: 0.55 !important;
+            text-shadow: 0 0 12px currentColor;
+        }
+        body.romantic-mode .player-brand {
+            text-shadow: 0 0 16px rgba(255, 105, 180, 0.5);
         }
 
-        /* Rain Global */
         .rain-container-global {
             position: fixed;
             top: 0;
@@ -99,7 +146,6 @@
             }
         }
 
-        /* Screens */
         .screen {
             position: absolute;
             top: 0;
@@ -121,7 +167,6 @@
             z-index: 60;
         }
 
-        /* Splash Screen */
         #splashScreen {
             background: radial-gradient(ellipse at center, rgba(29, 185, 84, 0.25) 0%, rgba(0, 0, 0, 0.7) 70%);
             z-index: 100;
@@ -161,7 +206,6 @@
             opacity: 0;
             font-size: 1.5rem;
         }
-
         @keyframes fadeInScale {
             0% {
                 transform: scale(0.3);
@@ -208,7 +252,6 @@
             }
         }
 
-        /* Login Screen */
         #loginScreen {
             background: rgba(0, 0, 0, 0.65);
             backdrop-filter: blur(20px);
@@ -225,6 +268,8 @@
             animation: cardPop 0.5s ease-out;
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: visible;
         }
         @keyframes cardPop {
             0% {
@@ -307,7 +352,151 @@
             font-weight: 600;
         }
 
-        /* Heartbeat Screen */
+        #mascot {
+            position: fixed;
+            z-index: 350;
+            pointer-events: none;
+            font-size: 3.5rem;
+            opacity: 0;
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.5));
+            will-change: transform, opacity;
+        }
+        #mascot.visible {
+            opacity: 1;
+        }
+        #mascot.wave-anim {
+            animation: mascotWave 0.6s ease-in-out 2;
+        }
+        #mascot.deny-anim {
+            animation: mascotDeny 0.5s ease-in-out 3;
+        }
+        #mascot.walk-in-right {
+            animation: walkInRight 1.2s ease-out forwards;
+        }
+        #mascot.walk-out-left {
+            animation: walkOutLeft 1s ease-in forwards;
+        }
+        #mascot.walk-in-left {
+            animation: walkInLeft 1s ease-out forwards;
+        }
+        #mascot.walk-out-right {
+            animation: walkOutRight 1s ease-in forwards;
+        }
+        @keyframes mascotWave {
+            0%,
+            100% {
+                transform: rotate(0deg) translateY(0);
+            }
+            25% {
+                transform: rotate(-15deg) translateY(-10px);
+            }
+            75% {
+                transform: rotate(15deg) translateY(-10px);
+            }
+        }
+        @keyframes mascotDeny {
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+            25% {
+                transform: rotate(-20deg);
+            }
+            75% {
+                transform: rotate(20deg);
+            }
+        }
+        @keyframes walkInRight {
+            0% {
+                right: -100px;
+                bottom: 20px;
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            60% {
+                right: 30px;
+                bottom: 20px;
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            100% {
+                right: 20px;
+                bottom: 20px;
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        @keyframes walkOutLeft {
+            0% {
+                right: 20px;
+                bottom: 20px;
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                right: 110vw;
+                bottom: 20px;
+                opacity: 0;
+                transform: scale(0.5);
+            }
+        }
+        @keyframes walkInLeft {
+            0% {
+                left: -100px;
+                bottom: 80px;
+                opacity: 0;
+                transform: scale(0.6);
+            }
+            70% {
+                left: 40px;
+                bottom: 80px;
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            100% {
+                left: 30px;
+                bottom: 80px;
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        @keyframes walkOutRight {
+            0% {
+                left: 30px;
+                bottom: 80px;
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                left: 110vw;
+                bottom: 80px;
+                opacity: 0;
+                transform: scale(0.5);
+            }
+        }
+        .mascot-speech {
+            position: fixed;
+            z-index: 351;
+            pointer-events: none;
+            background: rgba(30, 30, 30, 0.9);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-family: 'Montserrat', sans-serif;
+            max-width: 240px;
+            text-align: center;
+        }
+        .mascot-speech.show {
+            opacity: 1;
+        }
+
         #heartbeatScreen {
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(15px);
@@ -361,7 +550,6 @@
             box-shadow: 0 0 12px rgba(29, 185, 84, 0.6);
         }
 
-        /* Granted Screen */
         #grantedScreen {
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(10px);
@@ -392,7 +580,6 @@
             animation: fadeUp 0.5s ease-out 0.3s both;
         }
 
-        /* Player Wrapper */
         #playerWrapper {
             position: relative;
             z-index: 50;
@@ -450,7 +637,6 @@
             }
         }
 
-        /* Player Card */
         .player {
             padding: 30px 25px 25px;
             border-radius: 40px;
@@ -475,25 +661,15 @@
                 transform: translateY(0);
             }
         }
-
         .player-brand {
             font-size: 0.9rem;
             font-weight: 700;
             color: #fff;
             letter-spacing: 2px;
-            margin-bottom: 6px;
+            margin-bottom: 14px;
             opacity: 0.9;
             text-shadow: 0 0 12px rgba(29, 185, 84, 0.5);
         }
-        #chapterIndicator {
-            font-size: 0.7rem;
-            color: var(--accent);
-            margin-bottom: 14px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
         .cover-container {
             position: relative;
             display: inline-block;
@@ -543,8 +719,6 @@
                 transform: rotate(360deg);
             }
         }
-
-        /* Wave bars */
         .wave-bars {
             display: flex;
             align-items: center;
@@ -592,8 +766,6 @@
                 height: 26px;
             }
         }
-
-        /* Progress */
         .progress-container {
             width: 100%;
             margin-bottom: 8px;
@@ -654,8 +826,6 @@
             margin-bottom: 16px;
             font-weight: 600;
         }
-
-        /* Controls */
         .controls {
             display: flex;
             align-items: center;
@@ -710,8 +880,6 @@
             transform: scale(0.9);
             box-shadow: 0 3px 12px rgba(29, 185, 84, 0.7);
         }
-
-        /* Song info */
         .song-info {
             margin-bottom: 12px;
             position: relative;
@@ -731,8 +899,6 @@
             color: var(--text-secondary);
             font-weight: 400;
         }
-
-        /* Like & Volume row */
         .extra-row {
             display: flex;
             align-items: center;
@@ -823,8 +989,6 @@
             justify-content: center;
             transition: color 0.3s ease;
         }
-
-        /* Secret button */
         #secretBtn {
             width: 100%;
             padding: 10px;
@@ -846,7 +1010,6 @@
             color: #fff;
         }
 
-        /* Overlay & Modal */
         #overlay {
             position: fixed;
             top: 0;
@@ -916,7 +1079,6 @@
             transform: scale(0.93);
         }
 
-        /* Floating phrases */
         .floating-phrase {
             position: fixed;
             pointer-events: none;
@@ -944,8 +1106,6 @@
                 opacity: 0;
             }
         }
-
-        /* Heart explosion */
         .heart-particle {
             position: fixed;
             pointer-events: none;
@@ -988,7 +1148,936 @@
             }
         }
 
-        /* Light mode overrides */
+        .reaction-float {
+            position: fixed;
+            pointer-events: none;
+            z-index: 302;
+            font-size: 2.5rem;
+            animation: reactionRise 2.5s ease-out forwards;
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.6));
+        }
+        @keyframes reactionRise {
+            0% {
+                transform: translateY(0) scale(0.2) rotate(-20deg);
+                opacity: 0;
+            }
+            15% {
+                transform: translateY(-20px) scale(1.3) rotate(5deg);
+                opacity: 1;
+            }
+            60% {
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(-160px) scale(0.7) rotate(15deg);
+                opacity: 0;
+            }
+        }
+
+        /* ==================== MINI REPRODUCTOR ==================== */
+        #miniPlayer {
+            position: fixed;
+            bottom: var(--nav-height);
+            left: 0;
+            width: 100%;
+            height: var(--mini-player-height);
+            background: rgba(22, 22, 22, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 295;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            transform: translateY(120px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.35s ease;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+        }
+        #miniPlayer.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+        #miniPlayer .mini-cover {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        #miniPlayer .mini-cover.playing {
+            animation: miniSpin 8s linear infinite;
+        }
+        @keyframes miniSpin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        #miniPlayer .mini-info {
+            flex: 1;
+            min-width: 0;
+        }
+        #miniPlayer .mini-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: 0.5px;
+        }
+        #miniPlayer .mini-artist {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #miniPlayer .mini-play-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4);
+        }
+        #miniPlayer .mini-play-btn:active {
+            transform: scale(0.85);
+            box-shadow: 0 2px 10px rgba(29, 185, 84, 0.6);
+        }
+        #miniPlayer .mini-open-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ccc;
+            font-size: 0.75rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        #miniPlayer .mini-open-btn:active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        /* ==================== BOTTOM NAVIGATION BAR ==================== */
+        #bottomNav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 300;
+            background: var(--nav-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 4px 14px 4px;
+            gap: 2px;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s ease;
+            height: var(--nav-height);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 0.63rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            min-width: 52px;
+            background: transparent;
+            border: none;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .nav-item i {
+            font-size: 1.15rem;
+            transition: all 0.3s ease;
+        }
+        .nav-item.active-nav {
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent);
+        }
+        .nav-item.active-nav i {
+            filter: drop-shadow(0 0 8px var(--accent));
+            transform: scale(1.15);
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 16px;
+            height: 2.5px;
+            background: var(--accent);
+            border-radius: 3px;
+            transition: transform 0.3s ease;
+        }
+        .nav-item.active-nav::after {
+            transform: translateX(-50%) scaleX(1);
+        }
+        .nav-item:active {
+            transform: scale(0.9);
+        }
+
+        #pageLibrary,
+        #pageHome,
+        #pageSync,
+        #pageSettings {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 70;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 16px 150px 16px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        #pageLibrary.show,
+        #pageHome.show,
+        #pageSync.show,
+        #pageSettings.show {
+            display: block;
+            opacity: 1;
+        }
+        .page-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 20px;
+        }
+        .page-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            text-shadow: 0 0 15px rgba(29, 185, 84, 0.5);
+        }
+        .page-header .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+        }
+
+        .library-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .library-song-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(25, 25, 25, 0.7);
+            border-radius: 16px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .library-song-card:hover {
+            background: rgba(35, 35, 35, 0.8);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateX(3px);
+        }
+        .library-song-card:active {
+            transform: scale(0.97);
+            background: rgba(40, 40, 40, 0.85);
+        }
+        .library-song-card .lib-cover {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .library-song-card .lib-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .library-song-card .lib-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: 0.5px;
+        }
+        .library-song-card .lib-artist {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .library-song-card .lib-duration {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            opacity: 0.8;
+        }
+        .library-song-card .lib-play-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.35);
+        }
+        .library-song-card .lib-play-btn:active {
+            transform: scale(0.85);
+            box-shadow: 0 2px 10px rgba(29, 185, 84, 0.5);
+        }
+
+        /* Wall */
+        #pageHome .wall-container {
+            max-width: 420px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .wall-input-area {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .wall-input-area textarea {
+            flex: 1;
+            min-width: 180px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(30, 30, 30, 0.8);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.85rem;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
+            height: 50px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .wall-input-area textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(29, 185, 84, 0.2);
+        }
+        .wall-input-area textarea::placeholder {
+            color: #666;
+        }
+        .wall-send-btn {
+            padding: 12px 18px;
+            border-radius: 25px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 18px rgba(29, 185, 84, 0.35);
+            white-space: nowrap;
+        }
+        .wall-send-btn:active {
+            transform: scale(0.93);
+        }
+        .wall-canvas-tools {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 6px;
+        }
+        .wall-color-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        .wall-color-dot.active-color {
+            border-color: #fff;
+            box-shadow: 0 0 12px currentColor;
+            transform: scale(1.2);
+        }
+        .wall-tool-btn {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(30, 30, 30, 0.7);
+            color: #ccc;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .wall-tool-btn:active {
+            background: rgba(50, 50, 50, 0.8);
+            border-color: var(--accent);
+        }
+        #wallCanvas {
+            width: 100%;
+            max-width: 400px;
+            height: 180px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(20, 20, 20, 0.6);
+            cursor: crosshair;
+            touch-action: none;
+            display: block;
+            margin: 0 auto;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            position: relative;
+        }
+        .cursor-dot {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+            background: rgba(255, 255, 200, 0.9);
+            box-shadow: 0 0 16px 6px rgba(255, 255, 150, 0.7), 0 0 30px 10px rgba(255, 200, 100, 0.4);
+            transition: left 0.08s linear, top 0.08s linear;
+            display: none;
+        }
+        .cursor-dot.visible {
+            display: block;
+        }
+        .wall-save-drawing-btn {
+            display: block;
+            margin: 8px auto 0;
+            padding: 10px 22px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(30, 30, 30, 0.7);
+            color: #ccc;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .wall-save-drawing-btn:active {
+            background: rgba(50, 50, 50, 0.8);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .wall-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .wall-entry {
+            background: rgba(25, 25, 25, 0.7);
+            border-radius: 16px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            animation: fadeIn 0.4s ease-out;
+            position: relative;
+        }
+        .wall-entry .entry-time {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        .wall-entry .entry-text {
+            color: #ddd;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .wall-entry .entry-drawing {
+            max-width: 100%;
+            border-radius: 10px;
+            display: block;
+            margin-top: 6px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+        .wall-entry .entry-delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .wall-entry .entry-delete-btn:hover {
+            color: #ff5252;
+            background: rgba(255, 82, 82, 0.15);
+        }
+        .wall-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            padding: 30px;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        /* Sync Page */
+        #pageSync .sync-container {
+            max-width: 420px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .sync-card {
+            background: rgba(25, 25, 25, 0.7);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+        .sync-status-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+        .sync-status-dot.connected {
+            background: #1db954;
+            box-shadow: 0 0 14px rgba(29, 185, 84, 0.7);
+        }
+        .sync-status-dot.disconnected {
+            background: #888;
+            box-shadow: 0 0 8px rgba(150, 150, 150, 0.4);
+        }
+        @keyframes statusPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.4);
+                opacity: 0.6;
+            }
+        }
+        .sync-code-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: var(--accent);
+            font-family: 'Montserrat', monospace;
+            text-shadow: 0 0 20px rgba(29, 185, 84, 0.6);
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 14px;
+            margin: 10px 0;
+        }
+        .sync-input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(30, 30, 30, 0.8);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            text-align: center;
+            letter-spacing: 3px;
+            outline: none;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        .sync-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
+        }
+        .sync-input::placeholder {
+            color: #555;
+            letter-spacing: 2px;
+            font-size: 0.85rem;
+        }
+        .sync-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 30px;
+            border: none;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+        .sync-btn.activate {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
+        }
+        .sync-btn.deactivate {
+            background: rgba(255, 82, 82, 0.7);
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(255, 82, 82, 0.3);
+        }
+        .sync-btn.connect {
+            background: #2979ff;
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(41, 121, 255, 0.4);
+        }
+        .sync-btn:active {
+            transform: scale(0.94);
+        }
+        .sync-btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .sync-partner-status {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding: 8px;
+            letter-spacing: 0.5px;
+        }
+        .presence-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #ccc;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            margin: 3px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .presence-indicator .pres-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .pres-dot.online {
+            background: #1db954;
+            box-shadow: 0 0 10px rgba(29, 185, 84, 0.7);
+        }
+        .pres-dot.playing {
+            background: #ff9800;
+            box-shadow: 0 0 10px rgba(255, 152, 0, 0.7);
+            animation: presPulse 1.5s ease-in-out infinite;
+        }
+        .pres-dot.drawing {
+            background: #e040fb;
+            box-shadow: 0 0 10px rgba(224, 64, 251, 0.7);
+            animation: presPulse 0.6s ease-in-out infinite;
+        }
+        .pres-dot.writing {
+            background: #40c4ff;
+            box-shadow: 0 0 10px rgba(64, 196, 255, 0.7);
+            animation: presPulse 1s ease-in-out infinite;
+        }
+        @keyframes presPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.8);
+            }
+        }
+
+        /* Reactions bar */
+        .reactions-bar {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 8px 0;
+        }
+        .reaction-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(20, 20, 20, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .reaction-btn:active {
+            transform: scale(1.4);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
+            background: rgba(30, 30, 30, 0.8);
+        }
+
+        /* Settings */
+        .settings-list {
+            max-width: 420px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(25, 25, 25, 0.7);
+            border-radius: 16px;
+            padding: 16px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+        .settings-item .setting-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .settings-item .setting-label {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 0.5px;
+            min-width: 0;
+        }
+        .settings-item .setting-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 28px;
+            transition: all 0.3s ease;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .toggle-switch input:checked+.toggle-slider {
+            background: var(--accent);
+            box-shadow: 0 0 15px rgba(29, 185, 84, 0.5);
+        }
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(22px);
+        }
+        .settings-install-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(25, 25, 25, 0.7);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            text-align: left;
+        }
+        .settings-install-btn:active {
+            background: rgba(40, 40, 40, 0.85);
+            border-color: var(--accent);
+            transform: scale(0.97);
+        }
+        .settings-install-btn .install-icon {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        #installModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 400;
+            background: rgba(0, 0, 0, 0.75);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        #installModal.show {
+            display: flex;
+        }
+        #installModal .install-modal-content {
+            background: rgba(30, 30, 30, 0.95);
+            border-radius: 24px;
+            padding: 28px 22px;
+            max-width: 340px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 401;
+        }
+        #installModal .install-modal-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+        }
+        #installModal h3 {
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        #installModal p {
+            color: #ccc;
+            font-size: 0.85rem;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+        #installModal .install-steps {
+            text-align: left;
+            color: #ddd;
+            font-size: 0.8rem;
+            margin-bottom: 16px;
+            line-height: 1.8;
+            padding-left: 8px;
+        }
+        #installModal .install-steps span {
+            display: block;
+            margin: 3px 0;
+        }
+        #installModal .install-close-btn {
+            padding: 10px 28px;
+            border-radius: 25px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
+            transition: all 0.3s ease;
+        }
+        #installModal .install-close-btn:active {
+            transform: scale(0.93);
+        }
+
         .player.light-mode {
             background: rgba(255, 255, 255, 0.65);
             border: 1px solid rgba(0, 0, 0, 0.08);
@@ -1029,15 +2118,11 @@
             color: #1a1a1a;
             text-shadow: none;
         }
-        .player.light-mode #chapterIndicator {
-            color: #b8860b;
-        }
         .player.light-mode #progress {
             background: linear-gradient(90deg, #b8860b, #daa520, #b8860b);
             background-size: 200% 100%;
         }
 
-        /* Media Queries */
         @media (max-width: 380px) {
             #playerWrapper {
                 max-width: 100%;
@@ -1078,11 +2163,39 @@
             }
             .player-brand {
                 font-size: 0.8rem;
-                margin-bottom: 4px;
-            }
-            #chapterIndicator {
-                font-size: 0.65rem;
                 margin-bottom: 10px;
+            }
+            .nav-item {
+                padding: 4px 6px;
+                font-size: 0.58rem;
+                min-width: 44px;
+            }
+            .nav-item i {
+                font-size: 0.95rem;
+            }
+            #wallCanvas {
+                height: 140px;
+            }
+            .library-song-card .lib-cover {
+                width: 40px;
+                height: 40px;
+            }
+            .library-song-card .lib-title {
+                font-size: 0.8rem;
+            }
+            #miniPlayer {
+                padding: 6px 10px;
+                gap: 8px;
+            }
+            #miniPlayer .mini-cover {
+                width: 36px;
+                height: 36px;
+            }
+            #miniPlayer .mini-title {
+                font-size: 0.72rem;
+            }
+            #miniPlayer .mini-artist {
+                font-size: 0.6rem;
             }
         }
         @media (max-height: 700px) {
@@ -1105,10 +2218,11 @@
 </head>
 <body>
 
-    <!-- Rain Container -->
     <div id="rainContainerGlobal" class="rain-container-global"></div>
 
-    <!-- Splash Screen -->
+    <div id="mascot">🍌</div>
+    <div class="mascot-speech" id="mascotSpeech"></div>
+
     <div id="splashScreen" class="screen active">
         <div class="splash-particles" id="splashParticles"></div>
         <div class="splash-logo">🍌</div>
@@ -1116,40 +2230,28 @@
         <div class="splash-subtitle">NUESTRA HISTORIA</div>
     </div>
 
-    <!-- Login Screen -->
     <div id="loginScreen" class="screen">
         <div class="login-card">
             <div class="login-logo">🍌</div>
             <h3>Iniciar Sesión</h3>
-            <div class="input-group">
-                <label>CORREO</label>
-                <input type="text" id="usernameInput" placeholder="tu@correo.com" autocomplete="off">
-            </div>
-            <div class="input-group">
-                <label>CONTRASEÑA</label>
-                <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="off">
-            </div>
+            <div class="input-group"><label>CORREO</label><input type="text" id="usernameInput" placeholder="tu@correo.com" autocomplete="off"></div>
+            <div class="input-group"><label>CONTRASEÑA</label><input type="password" id="passwordInput" placeholder="••••••••" autocomplete="off"></div>
             <button class="login-btn" id="loginBtn">ENTRAR</button>
             <div class="login-error" id="loginError"></div>
         </div>
     </div>
 
-    <!-- Heartbeat Screen -->
     <div id="heartbeatScreen" class="screen">
         <div class="heartbeat-icon">💓</div>
         <div class="heartbeat-text">Verificando latidos...</div>
-        <div class="heartbeat-progress-container">
-            <div class="heartbeat-progress-fill" id="heartbeatProgressFill"></div>
-        </div>
+        <div class="heartbeat-progress-container"><div class="heartbeat-progress-fill" id="heartbeatProgressFill"></div></div>
     </div>
 
-    <!-- Granted Screen -->
     <div id="grantedScreen" class="screen">
         <div class="granted-icon">💚</div>
         <div class="granted-text">Acceso concedido</div>
     </div>
 
-    <!-- Overlay & Modal -->
     <div id="overlay">
         <div id="loveMessage">
             <div class="modal-title" id="modalTitle">💌 Mensaje</div>
@@ -1158,36 +2260,25 @@
         </div>
     </div>
 
-    <!-- Player Wrapper -->
+    <div id="installModal">
+        <div class="install-modal-content">
+            <div class="install-modal-icon">🍌</div>
+            <h3>🍌 Instala PLATANO MUSIC</h3>
+            <p>Lleva nuestra música siempre contigo</p>
+            <div class="install-steps"><span>📤 1. Toca <strong>Compartir</strong></span><span>📱 2. <strong>Agregar a pantalla de inicio</strong></span><span>✅ 3. ¡Listo ❤️</span></div>
+            <button class="install-close-btn" id="installModalCloseBtn">Entendido</button>
+        </div>
+    </div>
+
     <div id="playerWrapper" class="hidden-initially">
         <div class="glow glow-1"></div>
         <div class="glow glow-2"></div>
         <div class="player" id="player">
             <div class="player-brand">🍌 PLATANO MUSIC</div>
-            <div id="chapterIndicator">CAPÍTULO I · Nuestro inicio ❤️</div>
-            <div class="cover-container">
-                <div class="cover-ring"></div>
-                <img id="cover" class="cover" src="WhatsApp Image 2026-08-01 at 23.00.20 (1).jpeg" alt="Cover">
-            </div>
-            <div class="wave-bars">
-                <span class="banana-icon">🍌</span>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
-            <div class="progress-container" id="progressContainer">
-                <div id="progress-bar">
-                    <div id="progress"></div>
-                </div>
-            </div>
-            <div class="time-row">
-                <span id="current-time">0:00</span>
-                <span id="duration">0:00</span>
-            </div>
+            <div class="cover-container"><div class="cover-ring"></div><img id="cover" class="cover" src="https://cdn.jsdelivr.net/gh/josemanuelnavarretevazquez-lang/mi-cancion-para-ti@main/WhatsApp%20Image%202026-08-01%20at%2023.00.20%20(1).jpeg" alt="Cover"></div>
+            <div class="wave-bars"><span class="banana-icon">🍌</span><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div>
+            <div class="progress-container" id="progressContainer"><div id="progress-bar"><div id="progress"></div></div></div>
+            <div class="time-row"><span id="current-time">0:00</span><span id="duration">0:00</span></div>
             <div class="controls">
                 <button class="ctrl-btn" id="shuffleBtn" title="Aleatorio"><i class="fa-solid fa-shuffle"></i></button>
                 <button class="ctrl-btn" id="prevBtn" title="Anterior"><i class="fa-solid fa-backward-step"></i></button>
@@ -1195,93 +2286,221 @@
                 <button class="ctrl-btn" id="nextBtn" title="Siguiente"><i class="fa-solid fa-forward-step"></i></button>
                 <button class="ctrl-btn" id="repeatBtn" title="Repetir"><i class="fa-solid fa-repeat"></i></button>
             </div>
-            <div class="song-info">
-                <div class="song-title" id="title">JOHANA ESMERALDA</div>
-                <div class="song-artist" id="artist">De mí para ti ❤️</div>
-            </div>
+            <div class="song-info"><div class="song-title" id="title">JOHANA ESMERALDA</div><div class="song-artist" id="artist">De mí para ti ❤️</div></div>
             <div class="extra-row">
                 <button id="likeBtn" title="Me gusta"><i class="fa-solid fa-heart"></i></button>
                 <div class="volume-container">
                     <button id="volumeBtn" title="Volumen"><i class="fa-solid fa-volume-high"></i></button>
-                    <div id="volumeSliderContainer">
-                        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.8">
-                    </div>
+                    <div id="volumeSliderContainer"><input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.8"></div>
                 </div>
             </div>
             <button id="secretBtn">💌 Nuestro comienzo</button>
         </div>
     </div>
 
-    <!-- Audio Element -->
+    <!-- MINI REPRODUCTOR -->
+    <div id="miniPlayer">
+        <img id="miniCover" class="mini-cover" src="https://cdn.jsdelivr.net/gh/josemanuelnavarretevazquez-lang/mi-cancion-para-ti@main/WhatsApp%20Image%202026-08-01%20at%2023.00.20%20(1).jpeg" alt="Mini Cover">
+        <div class="mini-info">
+            <div class="mini-title" id="miniTitle">JOHANA ESMERALDA</div>
+            <div class="mini-artist" id="miniArtist">De mí para ti ❤️</div>
+        </div>
+        <button class="mini-play-btn" id="miniPlayBtn" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
+        <button class="mini-open-btn" id="miniOpenBtn" title="Abrir reproductor"><i class="fa-solid fa-chevron-up"></i></button>
+    </div>
+
+    <!-- Page: Library -->
+    <div id="pageLibrary"><div class="page-header"><h2>📚 Biblioteca</h2><div class="subtitle">Nuestra colección</div></div><div class="library-list" id="libraryList"></div></div>
+
+    <!-- Page: Home (Wall) -->
+    <div id="pageHome">
+        <div class="page-header"><h2>❤️ Nuestra pared</h2><div class="subtitle">Recuerdos que atesoro</div></div>
+        <div class="wall-container">
+            <div class="reactions-bar">
+                <button class="reaction-btn" data-reaction="❤️">❤️</button>
+                <button class="reaction-btn" data-reaction="🥹">🥹</button>
+                <button class="reaction-btn" data-reaction="😘">😘</button>
+                <button class="reaction-btn" data-reaction="✨">✨</button>
+                <button class="reaction-btn" data-reaction="😭">😭</button>
+            </div>
+            <div class="wall-input-area">
+                <textarea id="wallMessageInput" placeholder="Escribe un recuerdo... 💭" maxlength="500"></textarea>
+                <button class="wall-send-btn" id="wallSendBtn">💌 Guardar</button>
+            </div>
+            <div class="wall-canvas-tools">
+                <span class="wall-color-dot active-color" data-color="#ff5252" style="background:#ff5252;color:#ff5252;"></span>
+                <span class="wall-color-dot" data-color="#ff9800" style="background:#ff9800;color:#ff9800;"></span>
+                <span class="wall-color-dot" data-color="#ffd740" style="background:#ffd740;color:#ffd740;"></span>
+                <span class="wall-color-dot" data-color="#69f0ae" style="background:#69f0ae;color:#69f0ae;"></span>
+                <span class="wall-color-dot" data-color="#40c4ff" style="background:#40c4ff;color:#40c4ff;"></span>
+                <span class="wall-color-dot" data-color="#e040fb" style="background:#e040fb;color:#e040fb;"></span>
+                <span class="wall-color-dot" data-color="#ffffff" style="background:#ffffff;color:#ffffff;"></span>
+                <button class="wall-tool-btn" id="wallEraserBtn">🧹 Borrar</button>
+            </div>
+            <div style="position:relative;display:inline-block;margin:0 auto;max-width:400px;width:100%;">
+                <canvas id="wallCanvas" width="400" height="180"></canvas>
+                <div class="cursor-dot" id="remoteCursorDot"></div>
+            </div>
+            <button class="wall-save-drawing-btn" id="wallSaveDrawingBtn">💾 Guardar dibujo</button>
+            <div class="wall-entries" id="wallEntries"></div>
+        </div>
+    </div>
+
+    <!-- Page: Sync -->
+    <div id="pageSync">
+        <div class="page-header"><h2>🔗 Sincronización</h2><div class="subtitle">Conecta nuestros mundos</div></div>
+        <div class="sync-container">
+            <div class="sync-card">
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
+                    <span class="sync-status-dot disconnected" id="syncStatusDot"></span>
+                    <span style="font-weight:600;color:#fff;" id="syncStatusText">Desconectado</span>
+                </div>
+                <div class="sync-code-display" id="syncCodeDisplay">--------</div>
+                <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:10px;">Tu código de vinculación</p>
+                <button class="sync-btn activate" id="syncActivateBtn">🔗 Activar sincronización</button>
+                <button class="sync-btn deactivate" id="syncDeactivateBtn" style="display:none;">⏹ Desactivar</button>
+            </div>
+            <div class="sync-card">
+                <p style="font-size:0.8rem;color:#ccc;margin-bottom:8px;letter-spacing:1px;">Conectar con código</p>
+                <input type="text" class="sync-input" id="syncCodeInput" placeholder="PLATANO-XXXX" maxlength="14" autocomplete="off">
+                <button class="sync-btn connect" id="syncConnectBtn" style="margin-top:10px;">✨ Conectar</button>
+            </div>
+            <div class="sync-card" id="partnerStatusCard">
+                <p style="font-size:0.8rem;color:var(--text-secondary);letter-spacing:1px;">Estado del otro dispositivo</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;" id="partnerPresenceContainer">
+                    <span class="presence-indicator"><span class="pres-dot" style="background:#888;"></span> Sin conexión</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page: Settings -->
+    <div id="pageSettings">
+        <div class="page-header"><h2>⚙ Ajustes</h2><div class="subtitle">Personaliza tu experiencia</div></div>
+        <div class="settings-list">
+            <div class="settings-item">
+                <span class="setting-icon">🌙</span><div><div class="setting-label">Modo romántico</div><div class="setting-desc">Tonos más íntimos y cálidos</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="romanticModeToggle"><span class="toggle-slider"></span></label>
+            </div>
+            <button class="settings-install-btn" id="settingsInstallBtn"><span class="install-icon">🍌</span><span>Agregar a pantalla principal</span></button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav id="bottomNav">
+        <button class="nav-item" data-page="home"><i class="fa-solid fa-house"></i><span>Inicio</span></button>
+        <button class="nav-item" data-page="library"><i class="fa-solid fa-book-open"></i><span>Biblioteca</span></button>
+        <button class="nav-item" data-page="sync"><i class="fa-solid fa-link"></i><span>Sincronización</span></button>
+        <button class="nav-item" data-page="settings"><i class="fa-solid fa-gear"></i><span>Ajustes</span></button>
+    </nav>
+
     <audio id="audio" preload="auto"></audio>
+
+    <!-- Service Worker Registration for PWA & Notifications -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("data:application/javascript," + encodeURIComponent(`
+            self.addEventListener('install',e=>{self.skipWaiting();});
+            self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});
+            self.addEventListener('push',e=>{
+              const data=e.data?e.data.json():{title:'🍌 PLATANO MUSIC',body:'Nueva actualización'};
+              e.waitUntil(self.registration.showNotification(data.title,{
+                body:data.body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🍌</text></svg>',
+                badge:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🍌</text></svg>',
+                vibrate:[200,100,200],tag:'platano-notif'
+              }));
+            });
+            self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.openWindow('/'));});
+          `)).catch(() => {});
+        }
+    </script>
 
     <script>
         (function() {
+            // ============ FIREBASE CONFIG ============
+            // ⚠️ REEMPLAZA ESTOS VALORES CON TU PROYECTO DE FIREBASE ⚠️
+            const firebaseConfig = {
+                apiKey: "AIzaSyPLACEHOLDER_REEMPLAZAR_CON_TU_API_KEY",
+                authDomain: "platano-music-app.firebaseapp.com",
+                projectId: "platano-music-app",
+                storageBucket: "platano-music-app.appspot.com",
+                messagingSenderId: "000000000000",
+                appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxx"
+            };
+
+            let firebaseAvailable = false;
+            let db = null;
+            let messaging = null;
+
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                db.settings({ merge: true, experimentalForceLongPolling: true });
+                try {
+                    messaging = firebase.messaging();
+                } catch (e) {
+                    messaging = null;
+                }
+                firebaseAvailable = true;
+                console.log('🍌 Firebase inicializado correctamente');
+            } catch (e) {
+                console.warn('⚠️ Firebase no disponible - funcionando en modo offline:', e.message);
+                console.log('💡 Para habilitar sincronización: configura Firebase y reemplaza firebaseConfig');
+            }
+
             // ============ CONSTANTS & VARIABLES ============
-            const VALID_EMAIL = "JOHANA.MANUEL@AMORETERNO.COM";
-            const VALID_PASSWORD = "TE AMO";
+            const VALID_USERS = {
+                "JOHANA.MANUEL@AMORETERNO.COM": "TE AMO",
+                "BELLEZA@SEXY.COM.MX": "PANZON",
+                "MIAMOR@ELLA.COM": "TEAMO"
+            };
+            const DEVICE_ID = 'device_' + Math.random().toString(36).substr(2, 9);
+            const DEVICE_NAME = localStorage.getItem('platano_device_name') || ('Dispositivo ' + DEVICE_ID.slice(-4)
+                .toUpperCase());
 
-            const playlist = [{
-                title: "JOHANA ESMERALDA",
-                artist: "De mí para ti ❤️",
-                src: "JOHANA ESMERALDA.mp3",
-                cover: "WhatsApp Image 2026-08-01 at 23.00.20 (1).jpeg",
-                theme: "linear-gradient(135deg, #1db954 0%, #191414 100%)",
-                accent: "#1db954",
-                rainItems: ['❤️', '♥️', '💖', '💗', '💕'],
-                rainColors: ['#ff1744', '#ff5252', '#ff8a80', '#d50000', '#e91e63'],
-                chapter: "CAPÍTULO I · Nuestro inicio ❤️",
-                messageTitle: "💌 Nuestro comienzo",
-                messageText: "Cómo comenzó todo... Una partida que cambió la vida. Dios cruzó nuestros caminos y nació esta historia. Esta canción es el primer latido de todo lo que somos. Te amo, Johana Esmeralda. ❤️",
-                buttonLabel: "💌 Nuestro comienzo"
-            }, {
-                title: "Mi Solecito de Mi Vida",
-                artist: "Para compartir contigo 🌻",
-                src: "Mi Solecito de Mi Vida.mp3",
-                cover: "WhatsApp Image 2026-08-01 at 23.00.20.jpeg",
-                theme: "linear-gradient(135deg, #0d47a1 0%, #1976d2 40%, #191414 100%)",
-                accent: "#42a5f5",
-                rainItems: ['🌻', '🌼', '🟡', '☀️', '💛'],
-                rainColors: ['#ffd700', '#ffcc00', '#ffb300', '#fff176', '#ffe082'],
-                chapter: "CAPÍTULO I · Nuestro inicio ❤️",
-                messageTitle: "🌻 Lo que significas para mí",
-                messageText: "Esta versión es para que la escuches acompañada. Para compartirla con tu familia, con quienes forman parte de tu vida. Porque tú eres mi solecito, la luz que ilumina mis días y quiero que todos sepan lo especial que eres. 🌻",
-                buttonLabel: "🌻 Para compartir"
-            }, {
-                title: "REFUGIO",
-                artist: "Desde mi corazón 💜",
-                src: "JOHANA ESMERALDA.mp3",
-                cover: "WhatsApp Image 2026-08-01 at 23.00.20 (1).jpeg",
-                theme: "linear-gradient(135deg, #4a148c 0%, #7b1fa2 50%, #191414 100%)",
-                accent: "#ce93d8",
-                rainItems: ['🌸', '🫧', '💜', '✨', '🪷'],
-                rainColors: ['#e1bee7', '#ce93d8', '#ab47bc', '#f3e5f5', '#ba68c8'],
-                chapter: "CAPÍTULO II · REFUGIO ❤️",
-                messageTitle: "❤️ REFUGIO",
-                messageText: "No solo quiero decirte que eres mi refugio... quiero convertirme también en tu lugar seguro. En tus brazos encuentro paz, y en los míos quiero que siempre encuentres tranquilidad. Eres mi hogar. ❤️",
-                buttonLabel: "❤️ REFUGIO"
-            }, {
-                title: "Nuestra Promesa",
-                artist: "Nuestro futuro juntos 💍",
-                src: "Mi Solecito de Mi Vida.mp3",
-                cover: "WhatsApp Image 2026-08-01 at 23.00.20.jpeg",
-                theme: "linear-gradient(135deg, #ffffff 0%, #fef9e7 30%, #fdf2d5 60%, #f9e4b7 100%)",
-                accent: "#b8860b",
-                rainItems: ['💍', '💍', '💍', '✨', '💎', '🤍', '🥂', '💛', '🌟'],
-                rainColors: ['#d4af37', '#f9d423', '#ffd700', '#daa520', '#b8860b', '#c5a55a', '#e6c27a', '#f1c40f'],
-                chapter: "CAPÍTULO III · Nuestra promesa 💍",
-                messageTitle: "💍 Nuestra promesa",
-                messageText: "Esto es el futuro. Los sueños que construimos juntos. El compromiso de un amor que trasciende el tiempo. Esta canción es nuestra promesa grabada en el corazón. Te elijo hoy, mañana y siempre. 💍",
-                buttonLabel: "💍 Nuestra promesa"
-            }];
+            const GITHUB_BASE = "https://cdn.jsdelivr.net/gh/josemanuelnavarretevazquez-lang/mi-cancion-para-ti@main/";
 
-            const romanticPhrases = [
-                'Te amo ❤️', 'Eres mi todo ✨', 'Mi vida 💖', 'Siempre juntos 💑',
-                'Eres hermosa 🌸', 'Mi razón de ser 💫', 'Contigo siempre 💕',
-                'Eres mi sueño 💭', 'Te adoro 💗', 'Mi corazón es tuyo 💘',
-                'Eres única 💎', 'Gracias por existir 🌟', 'Mi amor eterno 💍',
-                'Eres mi sol ☀️', 'No puedo vivir sin ti 🌹', 'Eres perfecta 💯',
-                'Mi princesa 👑', 'Siempre en mi mente 🧠', 'Eres mi refugio 🏠'
+            const playlist = [
+                { title: "JOHANA ESMERALDA", artist: "De mí para ti ❤️", src: GITHUB_BASE + "JOHANA%20ESMERALDA.mp3",
+                    cover: GITHUB_BASE + "WhatsApp%20Image%202026-08-01%20at%2023.00.20%20(1).jpeg",
+                    theme: "linear-gradient(135deg, #1db954 0%, #191414 100%)", accent: "#1db954",
+                    rainItems: ['❤️', '♥️', '💖', '💗', '💕'], rainColors: ['#ff1744', '#ff5252', '#ff8a80',
+                        '#d50000', '#e91e63'
+                    ], messageTitle: "💌 Nuestro comienzo",
+                    messageText: "Cómo comenzó todo... Una partida que cambió la vida. Dios cruzó nuestros caminos y nació esta historia. Esta canción es el primer latido de todo lo que somos. Te amo, Johana Esmeralda. ❤️",
+                    buttonLabel: "💌 Nuestro comienzo", duration: "3:42" },
+                { title: "Mi Solecito de Mi Vida", artist: "Para compartir contigo 🌻", src: GITHUB_BASE + "Mi%20Solecito%20de%20Mi%20Vida.mp3",
+                    cover: GITHUB_BASE + "WhatsApp%20Image%202026-08-01%20at%2023.00.20.jpeg",
+                    theme: "linear-gradient(135deg, #0d47a1 0%, #1976d2 40%, #191414 100%)", accent: "#42a5f5",
+                    rainItems: ['🌻', '🌼', '🟡', '☀️', '💛'], rainColors: ['#ffd700', '#ffcc00', '#ffb300',
+                        '#fff176', '#ffe082'
+                    ], messageTitle: "🌻 Lo que significas para mí",
+                    messageText: "Esta versión es para que la escuches acompañada. Para compartirla con tu familia, con quienes forman parte de tu vida. Porque tú eres mi solecito, la luz que ilumina mis días y quiero que todos sepan lo especial que eres. 🌻",
+                    buttonLabel: "🌻 Para compartir", duration: "4:15" },
+                { title: "REFUGIO", artist: "Desde mi corazón 💜", src: GITHUB_BASE + "Refugio.mp3",
+                    cover: GITHUB_BASE + "WhatsApp%20Image%202026-08-04%20at%2014.15.32.jpeg",
+                    theme: "linear-gradient(135deg, #4a148c 0%, #7b1fa2 50%, #191414 100%)", accent: "#ce93d8",
+                    rainItems: ['🌸', '🫧', '💜', '✨', '🪷'], rainColors: ['#e1bee7', '#ce93d8', '#ab47bc',
+                        '#f3e5f5', '#ba68c8'
+                    ], messageTitle: "❤️ REFUGIO",
+                    messageText: "No solo quiero decirte que eres mi refugio... quiero convertirme también en tu lugar seguro. En tus brazos encuentro paz, y en los míos quiero que siempre encuentres tranquilidad. Eres mi hogar. ❤️",
+                    buttonLabel: "❤️ REFUGIO", duration: "3:58" },
+                { title: "Nuestra Promesa", artist: "Nuestro futuro juntos 💍", src: GITHUB_BASE + "Promesas.mp3",
+                    cover: GITHUB_BASE + "WhatsApp%20Image%202026-07-29%20at%2022.10.22.jpeg",
+                    theme: "linear-gradient(135deg, #ffffff 0%, #fef9e7 30%, #fdf2d5 60%, #f9e4b7 100%)",
+                    accent: "#b8860b", rainItems: ['💍', '💍', '💍', '✨', '💎', '🤍', '🥂', '💛', '🌟'],
+                    rainColors: ['#d4af37', '#f9d423', '#ffd700', '#daa520', '#b8860b', '#c5a55a', '#e6c27a',
+                        '#f1c40f'
+                    ], messageTitle: "💍 Nuestra promesa",
+                    messageText: "Esto es el futuro. Los sueños que construimos juntos. El compromiso de un amor que trasciende el tiempo. Esta canción es nuestra promesa grabada en el corazón. Te elijo hoy, mañana y siempre. 💍",
+                    buttonLabel: "💍 Nuestra promesa", duration: "4:30" }
+            ];
+
+            const romanticPhrases = ['Te amo ❤️', 'Eres mi todo ✨', 'Mi vida 💖', 'Siempre juntos 💑',
+                'Eres hermosa 🌸', 'Mi razón de ser 💫', 'Contigo siempre 💕', 'Eres mi sueño 💭', 'Te adoro 💗',
+                'Mi corazón es tuyo 💘', 'Eres única 💎', 'Gracias por existir 🌟', 'Mi amor eterno 💍',
+                'Eres mi sol ☀️', 'No puedo vivir sin ti 🌹', 'Eres perfecta 💯', 'Mi princesa 👑',
+                'Eres mi refugio 🏠'
             ];
 
             let currentTrackIndex = 0;
@@ -1293,331 +2512,266 @@
             let floatingPhrasesInterval = null;
             let audioCtx = null;
             let heartbeatInterval = null;
+            let currentPage = null;
+            let deferredPrompt = null;
+            let syncSessionCode = null;
+            let isSyncActive = false;
+            let syncPartnerId = null;
+            let firestoreUnsubscribers = [];
+            let lastSyncUpdateTime = 0;
+            let isRemoteSyncUpdate = false;
+            let remoteCursorTimeout = null;
 
             // ============ DOM ELEMENTS ============
-            const splashScreen = document.getElementById('splashScreen');
-            const loginScreen = document.getElementById('loginScreen');
-            const heartbeatScreen = document.getElementById('heartbeatScreen');
-            const grantedScreen = document.getElementById('grantedScreen');
-            const playerWrapper = document.getElementById('playerWrapper');
-            const player = document.getElementById('player');
-            const overlay = document.getElementById('overlay');
-            const loveMessage = document.getElementById('loveMessage');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalText = document.getElementById('modalText');
-            const modalCloseBtn = document.getElementById('modalCloseBtn');
-            const rainContainer = document.getElementById('rainContainerGlobal');
-            const audio = document.getElementById('audio');
-            const coverImg = document.getElementById('cover');
-            const titleEl = document.getElementById('title');
-            const artistEl = document.getElementById('artist');
-            const chapterIndicator = document.getElementById('chapterIndicator');
-            const playBtn = document.getElementById('playBtn');
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const shuffleBtn = document.getElementById('shuffleBtn');
-            const repeatBtn = document.getElementById('repeatBtn');
-            const likeBtn = document.getElementById('likeBtn');
-            const secretBtn = document.getElementById('secretBtn');
-            const progressBar = document.getElementById('progress-bar');
-            const progressFill = document.getElementById('progress');
-            const currentTimeEl = document.getElementById('current-time');
-            const durationEl = document.getElementById('duration');
-            const volumeBtn = document.getElementById('volumeBtn');
-            const volumeSliderContainer = document.getElementById('volumeSliderContainer');
-            const volumeSlider = document.getElementById('volumeSlider');
-            const heartbeatProgressFill = document.getElementById('heartbeatProgressFill');
-            const loginBtnEl = document.getElementById('loginBtn');
-            const usernameInput = document.getElementById('usernameInput');
-            const passwordInput = document.getElementById('passwordInput');
-            const loginError = document.getElementById('loginError');
-            const splashParticlesContainer = document.getElementById('splashParticles');
+            const $ = (id) => document.getElementById(id);
+            const splashScreen = $('splashScreen');
+            const loginScreen = $('loginScreen');
+            const heartbeatScreen = $('heartbeatScreen');
+            const grantedScreen = $('grantedScreen');
+            const playerWrapper = $('playerWrapper');
+            const overlay = $('overlay');
+            const modalTitle = $('modalTitle');
+            const modalText = $('modalText');
+            const rainContainer = $('rainContainerGlobal');
+            const audio = $('audio');
+            const coverImg = $('cover');
+            const titleEl = $('title');
+            const artistEl = $('artist');
+            const playBtn = $('playBtn');
+            const prevBtn = $('prevBtn');
+            const nextBtn = $('nextBtn');
+            const shuffleBtn = $('shuffleBtn');
+            const repeatBtn = $('repeatBtn');
+            const likeBtn = $('likeBtn');
+            const secretBtn = $('secretBtn');
+            const progressBar = $('progress-bar');
+            const progressFill = $('progress');
+            const currentTimeEl = $('current-time');
+            const durationEl = $('duration');
+            const volumeBtn = $('volumeBtn');
+            const volumeSliderContainer = $('volumeSliderContainer');
+            const volumeSlider = $('volumeSlider');
+            const heartbeatProgressFill = $('heartbeatProgressFill');
+            const loginBtnEl = $('loginBtn');
+            const usernameInput = $('usernameInput');
+            const passwordInput = $('passwordInput');
+            const loginError = $('loginError');
+            const splashParticlesContainer = $('splashParticles');
             const glow1 = document.querySelector('.glow-1');
             const glow2 = document.querySelector('.glow-2');
             const body = document.body;
+            const mascot = $('mascot');
+            const mascotSpeech = $('mascotSpeech');
+            const bottomNav = $('bottomNav');
+            const pageLibrary = $('pageLibrary');
+            const pageHome = $('pageHome');
+            const pageSync = $('pageSync');
+            const pageSettings = $('pageSettings');
+            const libraryList = $('libraryList');
+            const wallMessageInput = $('wallMessageInput');
+            const wallSendBtn = $('wallSendBtn');
+            const wallCanvas = $('wallCanvas');
+            const wallEntries = $('wallEntries');
+            const wallEraserBtn = $('wallEraserBtn');
+            const wallSaveDrawingBtn = $('wallSaveDrawingBtn');
+            const romanticModeToggle = $('romanticModeToggle');
+            const settingsInstallBtn = $('settingsInstallBtn');
+            const installModal = $('installModal');
+            const installModalCloseBtn = $('installModalCloseBtn');
+            const miniPlayer = $('miniPlayer');
+            const miniCover = $('miniCover');
+            const miniTitle = $('miniTitle');
+            const miniArtist = $('miniArtist');
+            const miniPlayBtn = $('miniPlayBtn');
+            const miniOpenBtn = $('miniOpenBtn');
+            const syncStatusDot = $('syncStatusDot');
+            const syncStatusText = $('syncStatusText');
+            const syncCodeDisplay = $('syncCodeDisplay');
+            const syncActivateBtn = $('syncActivateBtn');
+            const syncDeactivateBtn = $('syncDeactivateBtn');
+            const syncCodeInput = $('syncCodeInput');
+            const syncConnectBtn = $('syncConnectBtn');
+            const partnerPresenceContainer = $('partnerPresenceContainer');
+            const remoteCursorDot = $('remoteCursorDot');
+            const player = $('player');
 
             // ============ UTILITY FUNCTIONS ============
-            function formatTime(seconds) {
-                if (isNaN(seconds) || seconds < 0) return '0:00';
-                const m = Math.floor(seconds / 60);
-                const s = Math.floor(seconds % 60);
-                return m + ':' + (s < 10 ? '0' : '') + s;
-            }
+            function formatTime(seconds) { if (isNaN(seconds) || seconds < 0) return '0:00'; const m = Math.floor(
+                    seconds / 60); const s = Math.floor(seconds % 60); return m + ':' + (s < 10 ? '0' : '') +
+                s; }
 
-            function getRandomBetween(min, max) {
-                return Math.random() * (max - min) + min;
-            }
+            function getRandomBetween(min, max) { return Math.random() * (max - min) + min; }
 
-            function getRandomItem(arr) {
-                return arr[Math.floor(Math.random() * arr.length)];
-            }
+            function getRandomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+            function generateSyncCode() { const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let code = 'PLATANO-';
+                for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)]; return code; }
 
             // ============ RAIN SYSTEM ============
-            function clearRain() {
-                rainContainer.innerHTML = '';
-            }
+            function clearRain() { rainContainer.innerHTML = ''; }
 
-            function createRain(items, colors, density = 45) {
-                clearRain();
-                const fragment = document.createDocumentFragment();
-                for (let i = 0; i < density; i++) {
-                    const span = document.createElement('span');
-                    span.className = 'rain-item';
-                    span.textContent = getRandomItem(items);
-                    span.style.left = getRandomBetween(0, 100) + '%';
-                    span.style.fontSize = getRandomBetween(1.2, 2.8) + 'rem';
-                    span.style.color = getRandomItem(colors);
-                    span.style.animationDuration = getRandomBetween(4, 10) + 's';
-                    span.style.animationDelay = getRandomBetween(0, 8) + 's';
-                    span.style.opacity = getRandomBetween(0.5, 0.9);
-                    fragment.appendChild(span);
-                }
-                rainContainer.appendChild(fragment);
-            }
+            function createRain(items, colors, density = 45) { clearRain(); const fragment = document
+                .createDocumentFragment(); for (let i = 0; i < density; i++) { const span = document.createElement(
+                    'span'); span.className = 'rain-item'; span.textContent = getRandomItem(items); span.style.left =
+                    getRandomBetween(0, 100) + '%'; span.style.fontSize = getRandomBetween(1.2, 2.8) + 'rem'; span.style
+                    .color = getRandomItem(colors); span.style.animationDuration = getRandomBetween(4, 10) + 's'; span
+                    .style.animationDelay = getRandomBetween(0, 8) + 's'; span.style.opacity = getRandomBetween(0.5, 0.9
+                    ); fragment.appendChild(span); }
+                rainContainer.appendChild(fragment); }
 
             // ============ THEME APPLICATION ============
             function applyTheme(accentColor, trackIndex) {
                 document.documentElement.style.setProperty('--accent', accentColor);
-                document.documentElement.style.setProperty('--shadow-accent',
-                    `0 0 30px ${accentColor}66`);
-
+                document.documentElement.style.setProperty('--shadow-accent', `0 0 30px ${accentColor}66`);
                 if (glow1) glow1.style.background = accentColor;
                 if (glow2) glow2.style.background = accentColor;
-
                 progressFill.style.background =
                     `linear-gradient(90deg, ${accentColor}, ${accentColor}cc, ${accentColor})`;
                 progressFill.style.backgroundSize = '200% 100%';
-
-                const waveBars = document.querySelectorAll('.wave-bar');
-                waveBars.forEach(bar => {
-                    bar.style.background = accentColor;
-                });
-
+                document.querySelectorAll('.wave-bar').forEach(bar => { bar.style.background = accentColor; });
                 body.style.background = playlist[trackIndex].theme;
-
                 loginBtnEl.style.background = accentColor;
                 loginBtnEl.style.boxShadow = `0 8px 25px ${accentColor}66`;
-                modalCloseBtn.style.background = accentColor;
-                modalCloseBtn.style.boxShadow = `0 6px 20px ${accentColor}66`;
+                document.getElementById('modalCloseBtn').style.background = accentColor;
+                document.getElementById('modalCloseBtn').style.boxShadow = `0 6px 20px ${accentColor}66`;
                 playBtn.style.boxShadow = `0 6px 22px ${accentColor}80`;
-
-                if (trackIndex === 3) {
-                    player.classList.add('light-mode');
-                    body.classList.add('light-mode');
-                } else {
-                    player.classList.remove('light-mode');
-                    body.classList.remove('light-mode');
-                }
-
-                if (isLiked) {
-                    likeBtn.style.color = '#e91e63';
-                } else {
-                    likeBtn.style.color = '';
-                }
+                if (trackIndex === 3) { player.classList.add('light-mode');
+                    body.classList.add('light-mode'); } else { player.classList.remove('light-mode');
+                    body.classList.remove('light-mode'); }
+                if (isLiked) { likeBtn.style.color = '#e91e63'; } else { likeBtn.style.color = ''; }
             }
 
             // ============ COVER TRANSITION ============
-            function premiumTransition(newSrc, callback) {
-                coverImg.classList.add('transitioning');
-                setTimeout(() => {
+            function premiumTransition(newSrc, callback) { coverImg.classList.add('transitioning'); setTimeout(() => {
                     coverImg.src = newSrc;
-                    coverImg.onload = () => {
-                        coverImg.classList.remove('transitioning');
-                        if (callback) callback();
-                    };
-                    coverImg.onerror = () => {
-                        coverImg.classList.remove('transitioning');
-                        if (callback) callback();
-                    };
-                    setTimeout(() => {
-                        if (coverImg.classList.contains('transitioning')) {
-                            coverImg.classList.remove('transitioning');
-                            if (callback) callback();
-                        }
-                    }, 600);
-                }, 350);
-            }
+                    coverImg.onload = () => { coverImg.classList.remove('transitioning'); if (callback)
+                    callback(); };
+                    coverImg.onerror = () => { coverImg.classList.remove('transitioning'); if (callback)
+                    callback(); }; setTimeout(() => { if (coverImg.classList.contains('transitioning')) { coverImg
+                            .classList.remove('transitioning'); if (callback) callback(); } }, 600); },
+                350); }
 
             // ============ TRACK LOADING ============
-            function loadTrack(index, autoPlay = false) {
-                if (index < 0) index = playlist.length - 1;
-                if (index >= playlist.length) index = 0;
-                currentTrackIndex = index;
-                const track = playlist[index];
-
+            function loadTrack(index, autoPlay = false) { if (index < 0) index = playlist.length - 1; if (index >= playlist
+                    .length) index = 0;
+                currentTrackIndex = index; const track = playlist[index];
                 titleEl.textContent = track.title;
                 artistEl.textContent = track.artist;
-                chapterIndicator.textContent = track.chapter;
                 secretBtn.textContent = track.buttonLabel;
                 modalTitle.textContent = track.messageTitle;
                 modalText.textContent = track.messageText;
                 document.title = '🍌 ' + track.title + ' - PLATANO MUSIC';
-
+                miniTitle.textContent = track.title;
+                miniArtist.textContent = track.artist;
+                miniCover.src = track.cover;
                 applyTheme(track.accent, index);
-                createRain(track.rainItems, track.rainColors);
-
-                const wasPlaying = isPlaying;
-                if (wasPlaying) {
-                    audio.pause();
-                }
+                createRain(track.rainItems, track.rainColors); const wasPlaying = isPlaying; if (wasPlaying) { audio
+                    .pause(); }
                 audio.src = track.src;
                 audio.load();
-
                 progressFill.style.width = '0%';
                 currentTimeEl.textContent = '0:00';
-                durationEl.textContent = '0:00';
+                durationEl.textContent = '0:00'; const currentCover = coverImg.src; const newCover = track.cover; if (
+                    currentCover.indexOf(newCover) === -1) { premiumTransition(track.cover, () => { if (autoPlay ||
+                            wasPlaying) { safePlay(); } }); } else { if (autoPlay || wasPlaying) { safePlay(); } } if (
+                    !autoPlay && !wasPlaying) { updatePlayButton(); }
+                syncPlaybackState(); }
 
-                const currentCover = coverImg.src;
-                const newCover = track.cover;
-                if (currentCover.indexOf(newCover) === -1) {
-                    premiumTransition(track.cover, () => {
-                        if (autoPlay || wasPlaying) {
-                            safePlay();
-                        }
-                    });
-                } else {
-                    if (autoPlay || wasPlaying) {
-                        safePlay();
-                    }
-                }
-
-                if (!autoPlay && !wasPlaying) {
-                    updatePlayButton();
-                }
-            }
-
-            function safePlay() {
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        isPlaying = true;
+            function safePlay() { const playPromise = audio.play(); if (playPromise !== undefined) { playPromise.then(
+                    () => { isPlaying = true;
                         updatePlayButton();
                         coverImg.classList.add('playing');
                         progressFill.classList.add('playing-bar');
-                    }).catch(err => {
-                        console.warn('Play prevented:', err);
-                        isPlaying = false;
-                        updatePlayButton();
-                        coverImg.classList.remove('playing');
-                        progressFill.classList.remove('playing-bar');
-                    });
-                }
-            }
+                        miniCover.classList.add('playing');
+                        syncPlaybackState(); }).catch(err => { console.warn('Play prevented:', err);
+                    isPlaying = false;
+                    updatePlayButton();
+                    coverImg.classList.remove('playing');
+                    progressFill.classList.remove('playing-bar');
+                    miniCover.classList.remove('playing'); }); } }
 
-            function updatePlayButton() {
-                const icon = playBtn.querySelector('i');
-                if (isPlaying) {
-                    icon.className = 'fa-solid fa-pause';
-                } else {
-                    icon.className = 'fa-solid fa-play';
-                }
-            }
+            function updatePlayButton() { const icon = playBtn.querySelector('i'); const miniIcon = miniPlayBtn
+            .querySelector('i'); if (isPlaying) { icon.className = 'fa-solid fa-pause';
+                    miniIcon.className = 'fa-solid fa-pause'; } else { icon.className = 'fa-solid fa-play';
+                    miniIcon.className = 'fa-solid fa-play'; } }
 
-            function updateVolumeIcon() {
-                const vol = audio.volume;
-                const icon = volumeBtn.querySelector('i');
-                if (vol === 0) {
-                    icon.className = 'fa-solid fa-volume-xmark';
-                } else if (vol < 0.5) {
-                    icon.className = 'fa-solid fa-volume-low';
-                } else {
-                    icon.className = 'fa-solid fa-volume-high';
-                }
-            }
+            function updateVolumeIcon() { const vol = audio.volume; const icon = volumeBtn.querySelector('i'); if (vol ===
+                    0) { icon.className = 'fa-solid fa-volume-xmark'; } else if (vol < 0.5) { icon.className =
+                        'fa-solid fa-volume-low'; } else { icon.className = 'fa-solid fa-volume-high'; } }
 
             // ============ SHUFFLE ============
-            function generateShuffleOrder() {
-                const order = [];
-                for (let i = 0; i < playlist.length; i++) {
-                    if (i !== currentTrackIndex) order.push(i);
-                }
-                for (let i = order.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [order[i], order[j]] = [order[j], order[i]];
-                }
-                order.unshift(currentTrackIndex);
-                return order;
-            }
+            function generateShuffleOrder() { const order = []; for (let i = 0; i < playlist.length; i++) { if (i !==
+                    currentTrackIndex) order.push(i); } for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(
+                    Math.random() * (i + 1));
+                [order[i], order[j]] = [order[j], order[i]]; }
+                order.unshift(currentTrackIndex); return order; }
 
             // ============ FLOATING PHRASES ============
-            function startFloatingPhrases() {
-                stopFloatingPhrases();
-                floatingPhrasesInterval = setInterval(() => {
-                    if (!isPlaying) return;
-                    const phrase = document.createElement('span');
+            function startFloatingPhrases() { stopFloatingPhrases();
+                floatingPhrasesInterval = setInterval(() => { if (!isPlaying) return; const phrase = document
+                        .createElement('span');
                     phrase.className = 'floating-phrase';
                     phrase.textContent = getRandomItem(romanticPhrases);
                     phrase.style.left = getRandomBetween(5, 85) + '%';
                     phrase.style.bottom = getRandomBetween(10, 40) + '%';
-                    phrase.style.color = getRandomItem(['#ff5252', '#ff8a80', '#e91e63', '#ff4081',
-                        '#ff6e40', '#ffd740', '#69f0ae'
+                    phrase.style.color = getRandomItem(['#ff5252', '#ff8a80', '#e91e63', '#ff4081', '#ff6e40',
+                        '#ffd740', '#69f0ae'
                     ]);
                     phrase.style.animationDuration = getRandomBetween(3.5, 5.5) + 's';
-                    document.body.appendChild(phrase);
-                    setTimeout(() => {
-                        if (phrase.parentNode) phrase.parentNode.removeChild(phrase);
-                    }, 5500);
-                }, 5000);
-            }
+                    document.body.appendChild(phrase); setTimeout(() => { if (phrase.parentNode) phrase.parentNode
+                            .removeChild(phrase); }, 5500); }, 5000); }
 
-            function stopFloatingPhrases() {
-                if (floatingPhrasesInterval) {
-                    clearInterval(floatingPhrasesInterval);
-                    floatingPhrasesInterval = null;
-                }
-            }
+            function stopFloatingPhrases() { if (floatingPhrasesInterval) { clearInterval(floatingPhrasesInterval);
+                    floatingPhrasesInterval = null; } }
 
             // ============ HEART EXPLOSION ============
-            function createHeartExplosion(x, y) {
-                const heartEmojis = ['❤️', '💕', '💖', '💗', '💘', '💝', '💟', '♥️', '🫶', '💓', '💞', '🥰'];
-                const count = 16;
-                for (let i = 0; i < count; i++) {
-                    const particle = document.createElement('span');
+            function createHeartExplosion(x, y) { const heartEmojis = ['❤️', '💕', '💖', '💗', '💘', '💝', '💟', '♥️', '🫶',
+                    '💓', '💞', '🥰'
+                ]; const count = 16; for (let i = 0; i < count; i++) { const particle = document.createElement('span');
                     particle.className = 'heart-particle';
                     particle.textContent = getRandomItem(heartEmojis);
                     particle.style.left = x + 'px';
-                    particle.style.top = y + 'px';
-                    const angle = (Math.PI * 2 * i) / count;
-                    const distance = getRandomBetween(40, 100);
+                    particle.style.top = y + 'px'; const angle = (Math.PI * 2 * i) / count; const distance =
+                        getRandomBetween(40, 100);
                     particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
-                    particle.style.setProperty('--ty', Math.sin(angle) * distance - getRandomBetween(20, 60) +
-                        'px');
+                    particle.style.setProperty('--ty', Math.sin(angle) * distance - getRandomBetween(20, 60) + 'px');
                     particle.style.animationDuration = getRandomBetween(0.8, 1.4) + 's';
-                    document.body.appendChild(particle);
-                    setTimeout(() => {
-                        if (particle.parentNode) particle.parentNode.removeChild(particle);
-                    }, 1500);
-                }
-                const textPop = document.createElement('span');
+                    document.body.appendChild(particle); setTimeout(() => { if (particle.parentNode) particle.parentNode
+                            .removeChild(particle); }, 1500); } const textPop = document.createElement('span');
                 textPop.className = 'love-text-pop';
                 textPop.textContent = 'Te amo';
                 textPop.style.left = x + 'px';
                 textPop.style.top = (y - 10) + 'px';
-                document.body.appendChild(textPop);
-                setTimeout(() => {
-                    if (textPop.parentNode) textPop.parentNode.removeChild(textPop);
-                }, 2200);
-            }
+                document.body.appendChild(textPop); setTimeout(() => { if (textPop.parentNode) textPop.parentNode
+                        .removeChild(textPop); }, 2200); }
+
+            // ============ REACTION FLOAT ============
+            function createReactionFloat(emoji) { const el = document.createElement('span');
+                el.className = 'reaction-float';
+                el.textContent = emoji;
+                el.style.left = getRandomBetween(15, 80) + '%';
+                el.style.bottom = getRandomBetween(25, 55) + '%';
+                el.style.animationDuration = getRandomBetween(2, 3) + 's';
+                document.body.appendChild(el); setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); },
+                3000); }
+
+            // ============ NOTIFICATION ============
+            function showLocalNotification(title, body) { if ('Notification' in window && Notification.permission ===
+                    'granted') { new Notification(title, { body: body,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🍌</text></svg>',
+                        tag: 'platano-notif', vibrate: [200, 100, 200] }); } }
+
+            function requestNotificationPermission() { if ('Notification' in window && Notification.permission ===
+                    'default') { Notification.requestPermission().then(perm => { if (perm === 'granted') console.log(
+                            '🍌 Notificaciones habilitadas'); }); } }
 
             // ============ HEARTBEAT SYNTH ============
-            function playHeartbeat() {
-                try {
-                    if (!audioCtx) {
-                        audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-                    }
-                    if (audioCtx.state === 'suspended') {
-                        audioCtx.resume();
-                    }
-                } catch (e) {
-                    console.warn('Web Audio API not supported');
-                    return;
-                }
+            function playHeartbeat() { try { if (!audioCtx) { audioCtx = new(window.AudioContext || window
+                        .webkitAudioContext)(); } if (audioCtx.state === 'suspended') { audioCtx.resume(); } } catch (
+                    e) { return; }
 
-                function beat() {
-                    if (!audioCtx) return;
-                    const now = audioCtx.currentTime;
-                    const osc1 = audioCtx.createOscillator();
-                    const gain1 = audioCtx.createGain();
+                function beat() { if (!audioCtx) return; const now = audioCtx.currentTime; const osc1 = audioCtx
+                        .createOscillator(); const gain1 = audioCtx.createGain();
                     osc1.type = 'sine';
                     osc1.frequency.setValueAtTime(50, now);
                     osc1.frequency.exponentialRampToValueAtTime(30, now + 0.1);
@@ -1626,10 +2780,7 @@
                     osc1.connect(gain1);
                     gain1.connect(audioCtx.destination);
                     osc1.start(now);
-                    osc1.stop(now + 0.2);
-
-                    const osc2 = audioCtx.createOscillator();
-                    const gain2 = audioCtx.createGain();
+                    osc1.stop(now + 0.2); const osc2 = audioCtx.createOscillator(); const gain2 = audioCtx.createGain();
                     osc2.type = 'sine';
                     osc2.frequency.setValueAtTime(55, now + 0.18);
                     osc2.frequency.exponentialRampToValueAtTime(25, now + 0.28);
@@ -1638,350 +2789,828 @@
                     osc2.connect(gain2);
                     gain2.connect(audioCtx.destination);
                     osc2.start(now + 0.18);
-                    osc2.stop(now + 0.4);
-                }
-
+                    osc2.stop(now + 0.4); }
                 beat();
-                heartbeatInterval = setInterval(beat, 800);
-            }
+                heartbeatInterval = setInterval(beat, 800); }
 
-            function stopHeartbeat() {
-                if (heartbeatInterval) {
-                    clearInterval(heartbeatInterval);
-                    heartbeatInterval = null;
-                }
-            }
+            function stopHeartbeat() { if (heartbeatInterval) { clearInterval(heartbeatInterval);
+                    heartbeatInterval = null; } }
 
             // ============ SPLASH PARTICLES ============
-            function createSplashParticles() {
-                const emojis = ['🍌', '❤️', '💚', '✨', '💫', '🎵', '💿', '🌟'];
-                const fragment = document.createDocumentFragment();
-                for (let i = 0; i < 25; i++) {
-                    const particle = document.createElement('span');
+            function createSplashParticles() { const emojis = ['🍌', '❤️', '💚', '✨', '💫', '🎵', '💿', '🌟']; const fragment =
+                    document.createDocumentFragment(); for (let i = 0; i < 25; i++) { const particle = document
+                        .createElement('span');
                     particle.className = 'splash-particle';
                     particle.textContent = getRandomItem(emojis);
                     particle.style.left = getRandomBetween(0, 100) + '%';
                     particle.style.animationDuration = getRandomBetween(3, 7) + 's';
                     particle.style.animationDelay = getRandomBetween(0, 5) + 's';
                     particle.style.fontSize = getRandomBetween(1, 2.5) + 'rem';
-                    fragment.appendChild(particle);
-                }
-                splashParticlesContainer.appendChild(fragment);
-            }
+                    fragment.appendChild(particle); }
+                splashParticlesContainer.appendChild(fragment); }
+
+            // ============ MASCOT SYSTEM ============
+            function showMascotSpeech(text, x, y) { mascotSpeech.textContent = text;
+                mascotSpeech.style.left = x + 'px';
+                mascotSpeech.style.top = y + 'px';
+                mascotSpeech.classList.add('show'); }
+
+            function hideMascotSpeech() { mascotSpeech.classList.remove('show'); }
+
+            function mascotSplashSequence() { setTimeout(() => { mascot.classList.add('visible', 'walk-in-right');
+                    mascot.style.right = '20px';
+                    mascot.style.bottom = '20px';
+                    mascot.style.left = 'auto';
+                    mascot.style.top = 'auto'; setTimeout(() => { mascot.classList.add('wave-anim');
+                        showMascotSpeech('¡Hola! 💚', window.innerWidth - 160, window.innerHeight - 90); },
+                    1300); setTimeout(() => { hideMascotSpeech();
+                        mascot.classList.remove('wave-anim'); }, 3000); setTimeout(() => { mascot.classList
+                        .remove('walk-in-right');
+                        mascot.classList.add('walk-out-left'); }, 3500); setTimeout(() => { mascot.classList.remove(
+                        'visible', 'walk-out-left'); }, 4500); }, 600); }
+
+            function mascotLoginFailSequence() { mascot.classList.remove('walk-out-right', 'walk-out-left',
+                    'walk-in-right', 'walk-in-left');
+                mascot.style.left = '-100px';
+                mascot.style.bottom = '80px';
+                mascot.style.right = 'auto';
+                mascot.style.top = 'auto';
+                mascot.classList.add('visible', 'walk-in-left'); setTimeout(() => { mascot.classList.remove(
+                    'walk-in-left');
+                    mascot.classList.add('deny-anim');
+                    showMascotSpeech('Creo que escribimos algo mal ❤️', 90, window.innerHeight - 190); }, 1100);
+                setTimeout(() => { mascot.classList.remove('deny-anim'); }, 2800); setTimeout(() => { hideMascotSpeech();
+                    mascot.classList.add('walk-out-right'); }, 3200); setTimeout(() => { mascot.classList.remove(
+                        'visible', 'walk-out-right');
+                    mascot.style.left = '-100px'; }, 4200); }
 
             // ============ AUTH FLOW ============
-            function showScreen(screen) {
-                [splashScreen, loginScreen, heartbeatScreen, grantedScreen].forEach(s => s.classList.remove(
-                    'active'));
-                screen.classList.add('active');
-            }
+            function showScreen(screen) { [splashScreen, loginScreen, heartbeatScreen, grantedScreen].forEach(s => s
+                    .classList.remove('active'));
+                screen.classList.add('active'); }
 
-            function startHeartbeatSequence() {
-                showScreen(heartbeatScreen);
+            function startHeartbeatSequence() { showScreen(heartbeatScreen);
                 heartbeatProgressFill.style.width = '0%';
-                playHeartbeat();
+                playHeartbeat(); const steps = [{ width: '25%', delay: 0 }, { width: '50%', delay: 800 }, { width: '75%',
+                    delay: 1600 }, { width: '100%', delay: 2400 }];
+                steps.forEach(step => { setTimeout(() => { heartbeatProgressFill.style.width = step.width; }, step
+                    .delay); }); setTimeout(() => { stopHeartbeat();
+                    showScreen(grantedScreen); setTimeout(() => { revealPlayer(); }, 1500); }, 3200); }
 
-                const steps = [
-                    { width: '25%', delay: 0 },
-                    { width: '50%', delay: 800 },
-                    { width: '75%', delay: 1600 },
-                    { width: '100%', delay: 2400 },
-                ];
-
-                steps.forEach(step => {
-                    setTimeout(() => {
-                        heartbeatProgressFill.style.width = step.width;
-                    }, step.delay);
-                });
-
-                setTimeout(() => {
-                    stopHeartbeat();
-                    showScreen(grantedScreen);
-                    setTimeout(() => {
-                        revealPlayer();
-                    }, 1500);
-                }, 3200);
-            }
-
-            function revealPlayer() {
-                grantedScreen.classList.remove('active');
+            function revealPlayer() { grantedScreen.classList.remove('active');
                 playerWrapper.classList.remove('hidden-initially');
                 playerWrapper.classList.add('visible');
+                bottomNav.style.display = 'flex';
                 loadTrack(0, false);
                 startFloatingPhrases();
+                requestNotificationPermission();
+                updateMiniPlayerVisibility(); }
+
+            // ============ MINI PLAYER ============
+            function updateMiniPlayerVisibility() { if (currentPage === null) { miniPlayer.classList.remove('show'); } else {
+                    miniPlayer.classList.add('show'); } }
+
+            function updateMiniPlayerInfo() { const track = playlist[currentTrackIndex];
+                miniTitle.textContent = track.title;
+                miniArtist.textContent = track.artist;
+                miniCover.src = track.cover; if (isPlaying) { miniCover.classList.add('playing'); } else { miniCover
+                    .classList.remove('playing'); }
+                updatePlayButton(); }
+
+            miniPlayBtn.addEventListener('click', (e) => { e.stopPropagation();
+                playBtn.click();
+                updateMiniPlayerInfo(); });
+            miniOpenBtn.addEventListener('click', (e) => { e.stopPropagation();
+                hideAllPagesAndGoToPlayer(); });
+            miniPlayer.addEventListener('click', () => { hideAllPagesAndGoToPlayer(); });
+
+            // ============ NAVIGATION SYSTEM ============
+            function hideAllPages() { pageLibrary.classList.remove('show');
+                pageHome.classList.remove('show');
+                pageSync.classList.remove('show');
+                pageSettings.classList.remove('show'); }
+
+            function showPage(pageName) { hideAllPages();
+                currentPage = pageName; const targetPage = document.getElementById('page' + pageName.charAt(0)
+                    .toUpperCase() + pageName.slice(1)); if (targetPage) { targetPage.classList.add('show'); }
+                document.querySelectorAll('.nav-item').forEach(item => { item.classList.remove('active-nav'); if (item
+                        .dataset.page === pageName) { item.classList.add('active-nav'); } }); if (pageName === 'home') {
+                    renderWallEntries(); } if (pageName === 'library') { renderLibrary(); } if (pageName === 'sync') {
+                    updateSyncUI(); } if (pageName === 'settings') { romanticModeToggle.checked = body.classList.contains(
+                        'romantic-mode'); }
+                updateMiniPlayerVisibility(); }
+
+            function hideAllPagesAndGoToPlayer() { hideAllPages();
+                currentPage = null;
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active-nav'));
+                updateMiniPlayerVisibility();
+                playerWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+            // ============ LIBRARY ============
+            function renderLibrary() { libraryList.innerHTML = '';
+                playlist.forEach((track, index) => { const card = document.createElement('div');
+                    card.className = 'library-song-card';
+                    card.innerHTML = `<img class="lib-cover" src="${track.cover}" alt="${track.title}" onerror="this.style.background='rgba(30,30,30,0.8)';"><div class="lib-info"><div class="lib-title">${track.title}</div><div class="lib-artist">${track.artist}</div></div><span class="lib-duration">${track.duration||'--:--'}</span><button class="lib-play-btn" data-index="${index}" title="Reproducir"><i class="fa-solid fa-play"></i></button>`;
+                    card.addEventListener('click', (e) => { if (e.target.closest('.lib-play-btn')) { const idx =
+                                parseInt(e.target.closest('.lib-play-btn').dataset.index);
+                            hideAllPagesAndGoToPlayer(); const wasPlaying = isPlaying;
+                            isPlaying = false;
+                            coverImg.classList.remove('playing');
+                            progressFill.classList.remove('playing-bar');
+                            miniCover.classList.remove('playing');
+                            loadTrack(idx, true); } });
+                    libraryList.appendChild(card); }); }
+
+            // ============ WALL SYSTEM ============
+            function getWallData() { try { const raw = localStorage.getItem('platano_wall_data'); return raw ? JSON.parse(
+                        raw) : []; } catch (e) { return []; } }
+
+            function saveWallData(data) { try { localStorage.setItem('platano_wall_data', JSON.stringify(data)); } catch (
+                e) {} }
+
+            function addWallEntry(entry) { const data = getWallData();
+                data.unshift(entry); if (data.length > 100) data.length = 100;
+                saveWallData(data);
+                renderWallEntries();
+                syncWallEntry(entry); }
+
+            function deleteWallEntry(index) { const data = getWallData(); if (index >= 0 && index < data.length) { const
+                    deleted = data[index];
+                    data.splice(index, 1);
+                    saveWallData(data);
+                    renderWallEntries();
+                    syncWallDelete(deleted); } }
+
+            function renderWallEntries() { const data = getWallData();
+                wallEntries.innerHTML = ''; if (data.length === 0) { wallEntries.innerHTML =
+                        '<div class="wall-empty">✨ Aún no hay recuerdos en la pared. ¡Escribe o dibuja algo! ✨</div>'; return; }
+                data.forEach((entry, index) => { const div = document.createElement('div');
+                    div.className = 'wall-entry'; const timeStr = entry.timestamp ? new Date(entry.timestamp)
+                        .toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit',
+                            minute: '2-digit' }) : ''; let contentHTML = ''; if (entry.type === 'text') {
+                        contentHTML = `<p class="entry-text">${escapeHTML(entry.content)}</p>`; } else if (entry.type ===
+                        'drawing') { contentHTML =
+                            `<img class="entry-drawing" src="${entry.content}" alt="Dibujo" loading="lazy">`; }
+                    div.innerHTML = `<span class="entry-time">${timeStr}</span>${contentHTML}<button class="entry-delete-btn" data-index="${index}">✕</button>`;
+                    div.querySelector('.entry-delete-btn').addEventListener('click', (e) => { e.stopPropagation();
+                        deleteWallEntry(index); });
+                    wallEntries.appendChild(div); }); }
+
+            function escapeHTML(str) { const div = document.createElement('div');
+                div.textContent = str; return div.innerHTML; }
+
+            // ============ CANVAS DRAWING SYSTEM ============
+            let isDrawing = false;
+            let drawColor = '#ff5252';
+            let drawLineWidth = 3;
+            const canvasCtx = wallCanvas.getContext('2d');
+
+            function initCanvas() { canvasCtx.fillStyle = 'rgba(20,20,20,0.6)';
+                canvasCtx.fillRect(0, 0, wallCanvas.width, wallCanvas.height);
+                canvasCtx.strokeStyle = drawColor;
+                canvasCtx.lineWidth = drawLineWidth;
+                canvasCtx.lineCap = 'round';
+                canvasCtx.lineJoin = 'round'; }
+
+            function getCanvasPos(e) { const rect = wallCanvas.getBoundingClientRect(); const scaleX = wallCanvas.width /
+                    rect.width; const scaleY = wallCanvas.height / rect.height; let clientX, clientY; if (e.touches && e
+                    .touches.length > 0) { clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY; } else if (e.changedTouches && e.changedTouches.length > 0) { clientX =
+                    e.changedTouches[0].clientX;
+                    clientY = e.changedTouches[0].clientY; } else { clientX = e.clientX;
+                    clientY = e.clientY; } return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY }; }
+
+            function startDrawing(e) { e.preventDefault();
+                isDrawing = true; const pos = getCanvasPos(e);
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(pos.x, pos.y);
+                canvasCtx.strokeStyle = drawColor;
+                canvasCtx.lineWidth = drawLineWidth;
+                syncDrawingAction({ type: 'start', x: pos.x, y: pos.y, color: drawColor, width: drawLineWidth });
+                syncPresence('drawing');
+                updateRemoteCursor(pos); }
+
+            function draw(e) { if (!isDrawing) return;
+                e.preventDefault(); const pos = getCanvasPos(e);
+                canvasCtx.lineTo(pos.x, pos.y);
+                canvasCtx.stroke();
+                syncDrawingAction({ type: 'move', x: pos.x, y: pos.y });
+                updateRemoteCursor(pos); }
+
+            function stopDrawing(e) { if (!isDrawing) return;
+                isDrawing = false;
+                canvasCtx.closePath();
+                syncDrawingAction({ type: 'end' });
+                syncPresence('online');
+                hideRemoteCursor(); }
+
+            function updateRemoteCursor(pos) { if (!isSyncActive || !syncSessionCode || !db) return; try { const canvasRect =
+                        wallCanvas.getBoundingClientRect(); const scaleX = wallCanvas.width / canvasRect.width; const scaleY =
+                    wallCanvas.height / canvasRect.height;
+                    db.collection('sessions').doc(syncSessionCode).collection('cursor').doc(DEVICE_ID).set({ x: pos.x /
+                        scaleX, y: pos.y / scaleY, timestamp: Date.now(), deviceName: DEVICE_NAME }, { merge: true }); }
+            catch (e) {} }
+
+            function hideRemoteCursor() { if (!isSyncActive || !syncSessionCode || !db) return; try { db.collection(
+                        'sessions').doc(syncSessionCode).collection('cursor').doc(DEVICE_ID).delete(); } catch (e) {} if (
+                    remoteCursorTimeout) clearTimeout(remoteCursorTimeout);
+                remoteCursorTimeout = setTimeout(() => { remoteCursorDot.classList.remove('visible'); }, 1500); }
+
+            function clearCanvas() { canvasCtx.fillStyle = 'rgba(20,20,20,0.6)';
+                canvasCtx.fillRect(0, 0, wallCanvas.width, wallCanvas.height);
+                syncDrawingAction({ type: 'clear' }); }
+
+            function saveCanvasDrawing() { const dataURL = wallCanvas.toDataURL('image/png'); if (dataURL === 'data:,')
+                    return; const isBlank = isCanvasBlank(); if (isBlank) { alert(
+                    '🎨 Dibuja algo antes de guardar, mi amor ❤️'); return; }
+                addWallEntry({ type: 'drawing', content: dataURL, timestamp: Date.now() });
+                clearCanvas(); }
+
+            function isCanvasBlank() { const pixelData = canvasCtx.getImageData(0, 0, wallCanvas.width, wallCanvas.height)
+                    .data; for (let i = 3; i < pixelData.length; i += 4) { if (pixelData[i] > 20) return false; } return true; }
+
+            function applyRemoteDrawingAction(action) { switch (action.type) { case 'start':
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(action.x, action.y);
+                    canvasCtx.strokeStyle = action.color || '#ffffff';
+                    canvasCtx.lineWidth = action.width || 3;
+                    canvasCtx.lineCap = 'round';
+                    canvasCtx.lineJoin = 'round'; break; case 'move':
+                    canvasCtx.lineTo(action.x, action.y);
+                    canvasCtx.stroke(); break; case 'end':
+                    canvasCtx.closePath(); break; case 'clear':
+                    canvasCtx.fillStyle = 'rgba(20,20,20,0.6)';
+                    canvasCtx.fillRect(0, 0, wallCanvas.width, wallCanvas.height); break; } }
+
+            function updateRemoteCursorFromData(data) { if (!data || data.deviceName === DEVICE_NAME) return; const
+            canvasRect = wallCanvas.getBoundingClientRect(); const scaleX = wallCanvas.width / canvasRect.width; const
+            scaleY = wallCanvas.height / canvasRect.height;
+                remoteCursorDot.style.left = (data.x * scaleX - 7) + 'px';
+                remoteCursorDot.style.top = (data.y * scaleY - 7) + 'px';
+                remoteCursorDot.classList.add('visible'); if (remoteCursorTimeout) clearTimeout(remoteCursorTimeout);
+                remoteCursorTimeout = setTimeout(() => { remoteCursorDot.classList.remove('visible'); }, 2000); }
+
+            wallCanvas.addEventListener('mousedown', startDrawing);
+            wallCanvas.addEventListener('mousemove', draw);
+            wallCanvas.addEventListener('mouseup', stopDrawing);
+            wallCanvas.addEventListener('mouseleave', stopDrawing);
+            wallCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+            wallCanvas.addEventListener('touchmove', draw, { passive: false });
+            wallCanvas.addEventListener('touchend', stopDrawing);
+            wallCanvas.addEventListener('touchcancel', stopDrawing);
+            wallEraserBtn.addEventListener('click', () => { drawColor = '#141414';
+                drawLineWidth = 14;
+                document.querySelectorAll('.wall-color-dot').forEach(d => d.classList.remove('active-color')); });
+            document.querySelectorAll('.wall-color-dot').forEach(dot => { dot.addEventListener('click', () => { document
+                        .querySelectorAll('.wall-color-dot').forEach(d => d.classList.remove('active-color'));
+                    dot.classList.add('active-color');
+                    drawColor = dot.dataset.color;
+                    drawLineWidth = 3; }); });
+            wallSaveDrawingBtn.addEventListener('click', saveCanvasDrawing);
+            wallSendBtn.addEventListener('click', () => { const msg = wallMessageInput.value.trim(); if (!msg) return;
+                addWallEntry({ type: 'text', content: msg, timestamp: Date.now() });
+                wallMessageInput.value = '';
+                syncPresence('writing'); setTimeout(() => { if (isSyncActive) syncPresence('online'); }, 3000); });
+            wallMessageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault();
+                    wallSendBtn.click(); } });
+            wallMessageInput.addEventListener('focus', () => { syncPresence('writing'); });
+            wallMessageInput.addEventListener('blur', () => { setTimeout(() => { if (isSyncActive) syncPresence(
+                    'online'); }, 2000); });
+
+            // ============ REACTIONS ============
+            document.querySelectorAll('.reaction-btn').forEach(btn => { btn.addEventListener('click', () => { const emoji =
+                        btn.dataset.reaction;
+                    createReactionFloat(emoji);
+                    syncReaction(emoji); }); });
+
+            // ============ ROMANTIC MODE ============
+            function applyRomanticMode(enabled) { if (enabled) { body.classList.add('romantic-mode'); } else { body
+                    .classList.remove('romantic-mode'); } try { localStorage.setItem('platano_romantic_mode', enabled ?
+                    '1' : '0'); } catch (e) {} }
+            romanticModeToggle.addEventListener('change', () => { applyRomanticMode(romanticModeToggle.checked); });
+
+            // ============ INSTALL PROMPT ============
+            window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault();
+                deferredPrompt = e; });
+
+            function triggerInstall() { const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()); const
+                    isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone; if (
+                    isStandalone) { alert('🍌 Ya tienes PLATANO MUSIC instalada. ¡Disfruta! ❤️'); return; } if (isIOS) {
+                    installModal.classList.add('show'); } else if (deferredPrompt) { deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(() => { deferredPrompt = null; }); } else { installModal.classList.add(
+                        'show'); } }
+            settingsInstallBtn.addEventListener('click', triggerInstall);
+            installModalCloseBtn.addEventListener('click', () => { installModal.classList.remove('show'); });
+            installModal.addEventListener('click', (e) => { if (e.target === installModal) installModal.classList.remove(
+                    'show'); });
+
+            // ============ SYNC SYSTEM ============
+            function updateSyncUI() {
+                if (isSyncActive && syncSessionCode) {
+                    syncStatusDot.classList.remove('disconnected');
+                    syncStatusDot.classList.add('connected');
+                    syncStatusText.textContent = 'Conectado';
+                    syncCodeDisplay.textContent = syncSessionCode;
+                    syncActivateBtn.style.display = 'none';
+                    syncDeactivateBtn.style.display = 'block';
+                    syncConnectBtn.disabled = true;
+                } else {
+                    syncStatusDot.classList.remove('connected');
+                    syncStatusDot.classList.add('disconnected');
+                    syncStatusText.textContent = 'Desconectado';
+                    syncCodeDisplay.textContent = '--------';
+                    syncActivateBtn.style.display = 'block';
+                    syncDeactivateBtn.style.display = 'none';
+                    syncConnectBtn.disabled = false;
+                }
             }
 
-            // ============ EVENT LISTENERS ============
-
-            // Splash → Login
-            setTimeout(() => {
-                splashScreen.classList.remove('active');
-                loginScreen.classList.add('active');
-            }, 2500);
-
-            // Login
-            loginBtnEl.addEventListener('click', () => {
-                const email = usernameInput.value.trim();
-                const password = passwordInput.value.trim();
-                if (email.toUpperCase() === VALID_EMAIL && password === VALID_PASSWORD) {
-                    loginError.textContent = '';
-                    loginScreen.classList.remove('active');
-                    startHeartbeatSequence();
-                } else {
-                    loginError.textContent = 'Credenciales incorrectas. Intenta de nuevo.';
-                    passwordInput.value = '';
-                }
-            });
-
-            passwordInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') loginBtnEl.click();
-            });
-            usernameInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') passwordInput.focus();
-            });
-
-            // Play / Pause
-            playBtn.addEventListener('click', () => {
-                if (!audio.src || audio.src === window.location.href) {
-                    loadTrack(currentTrackIndex, true);
+            function activateSync() {
+                if (!firebaseAvailable || !db) {
+                    alert('⚠️ Firebase no está configurado.\n\nReemplaza firebaseConfig con tus credenciales reales.');
                     return;
                 }
-                if (isPlaying) {
-                    audio.pause();
+                syncSessionCode = generateSyncCode();
+                isSyncActive = true;
+                localStorage.setItem('platano_sync_code', syncSessionCode);
+                localStorage.setItem('platano_sync_active', '1');
+                updateSyncUI();
+                setupFirestoreSync();
+                syncPresence('online');
+                showLocalNotification('🔗 Sincronización activada', 'Código: ' + syncSessionCode);
+            }
+
+            function deactivateSync() {
+                isSyncActive = false;
+                syncSessionCode = null;
+                syncPartnerId = null;
+                localStorage.removeItem('platano_sync_code');
+                localStorage.removeItem('platano_sync_active');
+                updateSyncUI();
+                partnerPresenceContainer.innerHTML =
+                    '<span class="presence-indicator"><span class="pres-dot" style="background:#888;"></span> Sin conexión</span>';
+                cleanupFirestoreSync();
+                showLocalNotification('🔗 Sincronización desactivada', 'Dispositivos desconectados');
+            }
+
+            function connectWithCode() {
+                const code = syncCodeInput.value.trim().toUpperCase();
+                if (!code || !code.startsWith('PLATANO-') || code.length < 10) {
+                    alert('⚠️ Ingresa un código válido (PLATANO-XXXX)');
+                    return;
+                }
+                if (!firebaseAvailable || !db) {
+                    alert('⚠️ Firebase no está configurado.');
+                    return;
+                }
+                syncSessionCode = code;
+                isSyncActive = true;
+                localStorage.setItem('platano_sync_code', syncSessionCode);
+                localStorage.setItem('platano_sync_active', '1');
+                updateSyncUI();
+                setupFirestoreSync();
+                syncPresence('online');
+                showLocalNotification('🔗 Conectado a sesión', 'Código: ' + syncSessionCode);
+            }
+
+            function setupFirestoreSync() {
+                if (!db || !syncSessionCode) return;
+                cleanupFirestoreSync();
+                const sessionRef = db.collection('sessions').doc(syncSessionCode);
+
+                // Listen for presence changes
+                const presenceUnsub = sessionRef.collection('presence').onSnapshot(snapshot => {
+                    let html = '';
+                    let foundPartner = false;
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (doc.id !== DEVICE_ID) {
+                            syncPartnerId = doc.id;
+                            foundPartner = true;
+                            let dotClass = 'online';
+                            let label = 'Conectado';
+                            if (data.status === 'playing') { dotClass = 'playing';
+                                label = '🎵 Escuchando música'; } else if (data.status ===
+                                'drawing') { dotClass = 'drawing';
+                                label = '✏ Dibujando'; } else if (data.status === 'writing') { dotClass =
+                                    'writing';
+                                label = '💬 Escribiendo'; }
+                            html +=
+                                `<span class="presence-indicator"><span class="pres-dot ${dotClass}"></span> ${data.deviceName||'Compañero'} - ${label}</span>`;
+                        }
+                    });
+                    if (!foundPartner && syncPartnerId) {
+                        syncPartnerId = null;
+                    }
+                    if (html === '') {
+                        html =
+                            '<span class="presence-indicator"><span class="pres-dot" style="background:#888;"></span> Esperando compañero...</span>';
+                    }
+                    partnerPresenceContainer.innerHTML = html;
+                }, err => { console.warn('Presence listener error:', err); });
+                firestoreUnsubscribers.push(presenceUnsub);
+
+                // Listen for playback sync
+                const playbackUnsub = sessionRef.collection('playback').doc('state').onSnapshot(doc => {
+                    if (!doc.exists) return;
+                    const data = doc.data();
+                    if (data.deviceId === DEVICE_ID) return;
+                    if (Date.now() - lastSyncUpdateTime < 500) return;
+                    isRemoteSyncUpdate = true;
+                    if (data.trackIndex !== undefined && data.trackIndex !== currentTrackIndex) {
+                        const wasPlaying = isPlaying;
+                        isPlaying = false;
+                        coverImg.classList.remove('playing');
+                        progressFill.classList.remove('playing-bar');
+                        miniCover.classList.remove('playing');
+                        loadTrack(data.trackIndex, false);
+                    }
+                    if (data.isPlaying && !isPlaying) {
+                        safePlay();
+                    } else if (!data.isPlaying && isPlaying) {
+                        audio.pause();
+                        isPlaying = false;
+                        updatePlayButton();
+                        coverImg.classList.remove('playing');
+                        progressFill.classList.remove('playing-bar');
+                        miniCover.classList.remove('playing');
+                    }
+                    if (data.currentTime !== undefined && Math.abs(data.currentTime - audio.currentTime) >
+                        0.8) {
+                        audio.currentTime = data.currentTime;
+                    }
+                    if (data.volume !== undefined) {
+                        audio.volume = data.volume;
+                        volumeSlider.value = data.volume;
+                        updateVolumeIcon();
+                    }
+                    if (data.romanticMode !== undefined) {
+                        applyRomanticMode(data.romanticMode);
+                        romanticModeToggle.checked = data.romanticMode;
+                    }
+                    setTimeout(() => { isRemoteSyncUpdate = false; }, 300);
+                }, err => { console.warn('Playback listener error:', err); });
+                firestoreUnsubscribers.push(playbackUnsub);
+
+                // Listen for wall entries
+                const wallUnsub = sessionRef.collection('wall').orderBy('timestamp', 'desc').limit(50).onSnapshot(
+                    snapshot => {
+                        snapshot.docChanges().forEach(change => {
+                            if (change.type === 'added') {
+                                const entry = change.doc.data();
+                                if (entry.deviceId === DEVICE_ID) return;
+                                const localData = getWallData();
+                                const exists = localData.some(e => e.timestamp === entry
+                                    .timestamp && e.content === entry.content);
+                                if (!exists) {
+                                    localData.unshift(entry);
+                                    if (localData.length > 100) localData.length = 100;
+                                    saveWallData(localData);
+                                    renderWallEntries();
+                                    if (entry.type === 'text') {
+                                        showLocalNotification('💬 Nuevo mensaje',
+                                            entry.content.substring(0, 80));
+                                    } else if (entry.type === 'drawing') {
+                                        showLocalNotification('🎨 Nuevo dibujo',
+                                            'Alguien dibujó algo para ti ✨');
+                                    }
+                                }
+                            } else if (change.type === 'removed') {
+                                const entry = change.doc.data();
+                                const localData = getWallData();
+                                const idx = localData.findIndex(e => e.timestamp === entry
+                                    .timestamp && e.content === entry.content);
+                                if (idx >= 0) {
+                                    localData.splice(idx, 1);
+                                    saveWallData(localData);
+                                    renderWallEntries();
+                                }
+                            }
+                        });
+                    }, err => { console.warn('Wall listener error:', err); });
+                firestoreUnsubscribers.push(wallUnsub);
+
+                // Listen for drawing actions
+                const drawingUnsub = sessionRef.collection('drawing').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const action = change.doc.data();
+                            if (action.deviceId === DEVICE_ID) return;
+                            applyRemoteDrawingAction(action);
+                            setTimeout(() => {
+                                try { change.doc.ref.delete(); } catch (e) {}
+                            }, 2000);
+                        }
+                    });
+                }, err => { console.warn('Drawing listener error:', err); });
+                firestoreUnsubscribers.push(drawingUnsub);
+
+                // Listen for remote cursor
+                const cursorUnsub = sessionRef.collection('cursor').onSnapshot(snapshot => {
+                    snapshot.forEach(doc => {
+                        if (doc.id !== DEVICE_ID) {
+                            updateRemoteCursorFromData(doc.data());
+                        }
+                    });
+                }, err => { console.warn('Cursor listener error:', err); });
+                firestoreUnsubscribers.push(cursorUnsub);
+
+                // Listen for reactions
+                const reactionsUnsub = sessionRef.collection('reactions').orderBy('timestamp', 'asc').onSnapshot(
+                    snapshot => {
+                        snapshot.docChanges().forEach(change => {
+                            if (change.type === 'added') {
+                                const reaction = change.doc.data();
+                                if (reaction.deviceId === DEVICE_ID) return;
+                                createReactionFloat(reaction.emoji);
+                                showLocalNotification('✨ Nueva reacción',
+                                    `${reaction.deviceName||'Alguien'} envió ${reaction.emoji}`);
+                                setTimeout(() => { try { change.doc.ref.delete(); } catch (
+                                    e) {} }, 3000);
+                            }
+                        });
+                    }, err => { console.warn('Reactions listener error:', err); });
+                firestoreUnsubscribers.push(reactionsUnsub);
+            }
+
+            function cleanupFirestoreSync() {
+                firestoreUnsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
+                firestoreUnsubscribers = [];
+            }
+
+            function syncPresence(status) {
+                if (!isSyncActive || !syncSessionCode || !db) return;
+                try {
+                    db.collection('sessions').doc(syncSessionCode).collection('presence').doc(DEVICE_ID).set({
+                        deviceName: DEVICE_NAME,
+                        status: status,
+                        lastSeen: Date.now()
+                    }, { merge: true });
+                } catch (e) {}
+            }
+
+            function syncPlaybackState() {
+                if (!isSyncActive || !syncSessionCode || !db || isRemoteSyncUpdate) return;
+                lastSyncUpdateTime = Date.now();
+                try {
+                    db.collection('sessions').doc(syncSessionCode).collection('playback').doc('state').set({
+                        trackIndex: currentTrackIndex,
+                        isPlaying: isPlaying,
+                        currentTime: audio.currentTime,
+                        volume: audio.volume,
+                        romanticMode: body.classList.contains('romantic-mode'),
+                        deviceId: DEVICE_ID,
+                        timestamp: Date.now()
+                    }, { merge: true });
+                } catch (e) {}
+            }
+
+            function syncWallEntry(entry) {
+                if (!isSyncActive || !syncSessionCode || !db) return;
+                try {
+                    db.collection('sessions').doc(syncSessionCode).collection('wall').add({
+                        ...entry,
+                        deviceId: DEVICE_ID,
+                        deviceName: DEVICE_NAME,
+                        syncedAt: Date.now()
+                    });
+                } catch (e) {}
+            }
+
+            function syncWallDelete(entry) {
+                if (!isSyncActive || !syncSessionCode || !db) return;
+                try {
+                    db.collection('sessions').doc(syncSessionCode).collection('wall')
+                        .where('timestamp', '==', entry.timestamp)
+                        .where('deviceId', '==', DEVICE_ID)
+                        .get().then(snapshot => {
+                            snapshot.forEach(doc => { doc.ref.delete(); });
+                        }).catch(() => {});
+                } catch (e) {}
+            }
+
+            function syncDrawingAction(action) {
+                if (!isSyncActive || !syncSessionCode || !db) return;
+                try {
+                    db.collection('sessions').doc(syncSessionCode).collection('drawing').add({
+                        ...action,
+                        deviceId: DEVICE_ID,
+                        deviceName: DEVICE_NAME,
+                        timestamp: Date.now()
+                    });
+                } catch (e) {}
+            }
+
+            function syncReaction(emoji) {
+                if (!isSyncActive || !syncSessionCode || !db) return;
+                try {
+                    db.collection('sessions').doc(syncSessionCode).collection('reactions').add({
+                        emoji: emoji,
+                        deviceId: DEVICE_ID,
+                        deviceName: DEVICE_NAME,
+                        timestamp: Date.now()
+                    });
+                } catch (e) {}
+            }
+
+            syncActivateBtn.addEventListener('click', activateSync);
+            syncDeactivateBtn.addEventListener('click', deactivateSync);
+            syncConnectBtn.addEventListener('click', connectWithCode);
+            syncCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') connectWithCode(); });
+
+            // ============ EVENT LISTENERS ============
+            document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { const page =
+                        item.dataset.page; if (currentPage === page) { hideAllPagesAndGoToPlayer(); return; }
+                    showPage(page); }); });
+
+            // Check for existing session and skip login if already authenticated
+            const savedUser = localStorage.getItem('platano_auth_user');
+            if (savedUser) {
+                setTimeout(() => {
+                    splashScreen.classList.remove('active');
+                    startHeartbeatSequence();
+                }, 2500);
+            } else {
+                setTimeout(() => { splashScreen.classList.remove('active');
+                    loginScreen.classList.add('active');
+                    mascotSplashSequence(); }, 2500);
+            }
+
+            loginBtnEl.addEventListener('click', () => { const email = usernameInput.value.trim(); const password =
+                    passwordInput.value.trim(); if (VALID_USERS[email.toUpperCase()] === password) {
+                    loginError.textContent = '';
+                    localStorage.setItem('platano_auth_user', email);
+                    loginScreen.classList.remove('active');
+                    startHeartbeatSequence(); } else { loginError.textContent =
+                    'Credenciales incorrectas. Intenta de nuevo.';
+                    passwordInput.value = '';
+                    mascotLoginFailSequence(); } });
+            passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginBtnEl.click(); });
+            usernameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') passwordInput.focus(); });
+
+            playBtn.addEventListener('click', () => { if (!audio.src || audio.src === window.location.href) { loadTrack(
+                        currentTrackIndex, true); return; } if (isPlaying) { audio.pause();
                     isPlaying = false;
                     coverImg.classList.remove('playing');
                     progressFill.classList.remove('playing-bar');
-                } else {
-                    safePlay();
-                }
+                    miniCover.classList.remove('playing'); } else { safePlay(); }
                 updatePlayButton();
-            });
+                updateMiniPlayerInfo();
+                syncPlaybackState(); });
 
-            // Next
-            nextBtn.addEventListener('click', () => {
-                let nextIndex;
-                if (isShuffle && shuffleOrder.length > 0) {
-                    const currentShufflePos = shuffleOrder.indexOf(currentTrackIndex);
-                    if (currentShufflePos < shuffleOrder.length - 1) {
-                        nextIndex = shuffleOrder[currentShufflePos + 1];
-                    } else {
-                        shuffleOrder = generateShuffleOrder();
-                        nextIndex = shuffleOrder[0];
-                    }
-                } else {
-                    nextIndex = (currentTrackIndex + 1) % playlist.length;
-                }
-                const wasPlaying = isPlaying;
+            nextBtn.addEventListener('click', () => { let nextIndex; if (isShuffle && shuffleOrder.length > 0) { const
+                        currentShufflePos = shuffleOrder.indexOf(currentTrackIndex); if (currentShufflePos < shuffleOrder
+                            .length - 1) { nextIndex = shuffleOrder[currentShufflePos + 1]; } else { shuffleOrder =
+                            generateShuffleOrder();
+                        nextIndex = shuffleOrder[0]; } } else { nextIndex = (currentTrackIndex + 1) % playlist.length; } const
+                    wasPlaying = isPlaying;
                 isPlaying = false;
                 coverImg.classList.remove('playing');
                 progressFill.classList.remove('playing-bar');
+                miniCover.classList.remove('playing');
                 loadTrack(nextIndex, wasPlaying);
-            });
+                updateMiniPlayerInfo(); });
 
-            // Previous
-            prevBtn.addEventListener('click', () => {
-                if (audio.currentTime > 3) {
-                    audio.currentTime = 0;
+            prevBtn.addEventListener('click', () => { if (audio.currentTime > 3) { audio.currentTime = 0;
                     progressFill.style.width = '0%';
                     currentTimeEl.textContent = '0:00';
-                    return;
-                }
-                let prevIndex;
-                if (isShuffle && shuffleOrder.length > 0) {
-                    const currentShufflePos = shuffleOrder.indexOf(currentTrackIndex);
-                    if (currentShufflePos > 0) {
-                        prevIndex = shuffleOrder[currentShufflePos - 1];
-                    } else {
-                        prevIndex = shuffleOrder[shuffleOrder.length - 1];
-                    }
-                } else {
-                    prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-                }
-                const wasPlaying = isPlaying;
+                    syncPlaybackState(); return; } let prevIndex; if (isShuffle && shuffleOrder.length > 0) { const
+                        currentShufflePos = shuffleOrder.indexOf(currentTrackIndex); if (currentShufflePos > 0) {
+                        prevIndex = shuffleOrder[currentShufflePos - 1]; } else { prevIndex = shuffleOrder[shuffleOrder
+                            .length - 1]; } } else { prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist
+                        .length; } const wasPlaying = isPlaying;
                 isPlaying = false;
                 coverImg.classList.remove('playing');
                 progressFill.classList.remove('playing-bar');
+                miniCover.classList.remove('playing');
                 loadTrack(prevIndex, wasPlaying);
-            });
+                updateMiniPlayerInfo(); });
 
-            // Shuffle
-            shuffleBtn.addEventListener('click', () => {
-                isShuffle = !isShuffle;
-                if (isShuffle) {
-                    shuffleBtn.classList.add('active-ctrl');
-                    shuffleOrder = generateShuffleOrder();
-                } else {
-                    shuffleBtn.classList.remove('active-ctrl');
-                    shuffleOrder = [];
-                }
-            });
+            shuffleBtn.addEventListener('click', () => { isShuffle = !isShuffle; if (isShuffle) { shuffleBtn.classList.add(
+                        'active-ctrl');
+                    shuffleOrder = generateShuffleOrder(); } else { shuffleBtn.classList.remove('active-ctrl');
+                    shuffleOrder = []; } });
+            repeatBtn.addEventListener('click', () => { isRepeat = !isRepeat; if (isRepeat) { repeatBtn.classList.add(
+                    'active-ctrl'); } else { repeatBtn.classList.remove('active-ctrl'); } });
 
-            // Repeat
-            repeatBtn.addEventListener('click', () => {
-                isRepeat = !isRepeat;
-                if (isRepeat) {
-                    repeatBtn.classList.add('active-ctrl');
-                } else {
-                    repeatBtn.classList.remove('active-ctrl');
-                }
-            });
+            likeBtn.addEventListener('click', (e) => { isLiked = !isLiked; if (isLiked) { likeBtn.classList.add('liked');
+                    likeBtn.style.color = '#e91e63'; const rect = likeBtn.getBoundingClientRect();
+                    createHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2); } else { likeBtn.classList
+                        .remove('liked');
+                    likeBtn.style.color = ''; } });
 
-            // Like
-            likeBtn.addEventListener('click', (e) => {
-                isLiked = !isLiked;
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    likeBtn.style.color = '#e91e63';
-                    const rect = likeBtn.getBoundingClientRect();
-                    createHeartExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                } else {
-                    likeBtn.classList.remove('liked');
-                    likeBtn.style.color = '';
-                }
-            });
-
-            // Volume
-            volumeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                volumeSliderContainer.classList.toggle('show');
-            });
-            volumeSlider.addEventListener('input', () => {
-                audio.volume = parseFloat(volumeSlider.value);
+            volumeBtn.addEventListener('click', (e) => { e.stopPropagation();
+                volumeSliderContainer.classList.toggle('show'); });
+            volumeSlider.addEventListener('input', () => { audio.volume = parseFloat(volumeSlider.value);
                 updateVolumeIcon();
-            });
-            document.addEventListener('click', (e) => {
-                if (!volumeSliderContainer.contains(e.target) && e.target !== volumeBtn) {
-                    volumeSliderContainer.classList.remove('show');
-                }
-            });
+                syncPlaybackState(); });
+            document.addEventListener('click', (e) => { if (!volumeSliderContainer.contains(e.target) && e.target !==
+                    volumeBtn) { volumeSliderContainer.classList.remove('show'); } });
 
-            // Secret button / Modal
-            secretBtn.addEventListener('click', () => {
-                const track = playlist[currentTrackIndex];
+            secretBtn.addEventListener('click', () => { const track = playlist[currentTrackIndex];
                 modalTitle.textContent = track.messageTitle;
                 modalText.textContent = track.messageText;
-                overlay.classList.add('show');
-            });
-            modalCloseBtn.addEventListener('click', () => {
-                overlay.classList.remove('show');
-            });
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) overlay.classList.remove('show');
-            });
+                overlay.classList.add('show'); });
+            document.getElementById('modalCloseBtn').addEventListener('click', () => { overlay.classList.remove('show'); });
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
 
-            // Progress bar
-            function setProgressFromEvent(e) {
-                const rect = progressBar.getBoundingClientRect();
-                const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-                const clickX = clientX - rect.left;
-                const width = rect.width;
-                const fraction = Math.max(0, Math.min(1, clickX / width));
-                if (audio.duration && isFinite(audio.duration)) {
-                    audio.currentTime = fraction * audio.duration;
+            function setProgressFromEvent(e) { const rect = progressBar.getBoundingClientRect(); const clientX = e.clientX ||
+                    (e.touches && e.touches[0].clientX) || 0; const clickX = clientX - rect.left; const width = rect
+                    .width; const fraction = Math.max(0, Math.min(1, clickX / width)); if (audio.duration && isFinite(audio
+                        .duration)) { audio.currentTime = fraction * audio.duration;
                     progressFill.style.width = (fraction * 100) + '%';
                     currentTimeEl.textContent = formatTime(audio.currentTime);
-                }
-            }
+                    syncPlaybackState(); } }
             progressBar.addEventListener('click', setProgressFromEvent);
             progressBar.addEventListener('touchstart', setProgressFromEvent);
-            progressBar.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                setProgressFromEvent(e);
-            }, { passive: false });
+            progressBar.addEventListener('touchmove', (e) => { e.preventDefault();
+                setProgressFromEvent(e); }, { passive: false });
 
-            // Audio events
-            audio.addEventListener('loadedmetadata', () => {
-                durationEl.textContent = formatTime(audio.duration);
+            audio.addEventListener('loadedmetadata', () => { durationEl.textContent = formatTime(audio.duration);
                 progressFill.style.width = '0%';
-                currentTimeEl.textContent = '0:00';
-            });
-            audio.addEventListener('timeupdate', () => {
-                if (audio.duration && isFinite(audio.duration)) {
-                    const fraction = audio.currentTime / audio.duration;
+                currentTimeEl.textContent = '0:00'; });
+            audio.addEventListener('timeupdate', () => { if (audio.duration && isFinite(audio.duration)) { const fraction =
+                        audio.currentTime / audio.duration;
                     progressFill.style.width = (fraction * 100) + '%';
-                    currentTimeEl.textContent = formatTime(audio.currentTime);
-                }
-            });
-            audio.addEventListener('ended', () => {
-                if (isRepeat) {
-                    audio.currentTime = 0;
-                    safePlay();
-                } else {
-                    nextBtn.click();
-                }
-            });
-            audio.addEventListener('play', () => {
-                isPlaying = true;
+                    currentTimeEl.textContent = formatTime(audio.currentTime); } if (isSyncActive && isPlaying && !isRemoteSyncUpdate &&
+                    Date.now() - lastSyncUpdateTime > 2000) { syncPlaybackState(); } });
+            audio.addEventListener('ended', () => { if (isRepeat) { audio.currentTime = 0;
+                    safePlay(); } else { nextBtn.click(); } });
+            audio.addEventListener('play', () => { isPlaying = true;
                 updatePlayButton();
                 coverImg.classList.add('playing');
                 progressFill.classList.add('playing-bar');
-            });
-            audio.addEventListener('pause', () => {
-                isPlaying = false;
+                miniCover.classList.add('playing');
+                syncPresence('playing');
+                syncPlaybackState(); });
+            audio.addEventListener('pause', () => { isPlaying = false;
                 updatePlayButton();
                 coverImg.classList.remove('playing');
                 progressFill.classList.remove('playing-bar');
-            });
-            audio.addEventListener('error', () => {
-                console.warn('Audio file could not be loaded:', audio.src);
-                isPlaying = false;
+                miniCover.classList.remove('playing');
+                syncPresence('online');
+                syncPlaybackState(); });
+            audio.addEventListener('error', () => { isPlaying = false;
                 updatePlayButton();
                 coverImg.classList.remove('playing');
                 progressFill.classList.remove('playing-bar');
-            });
+                miniCover.classList.remove('playing'); });
 
-            // Keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                if (playerWrapper.classList.contains('hidden-initially')) return;
-                if (e.target.tagName === 'INPUT') return;
-                switch (e.code) {
+            document.addEventListener('keydown', (e) => { if (playerWrapper.classList.contains('hidden-initially'))
+                    return; if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; switch (e.code) {
                     case 'Space':
                         e.preventDefault();
-                        playBtn.click();
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        if (e.shiftKey) nextBtn.click();
-                        else audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
-                        break;
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        if (e.shiftKey) prevBtn.click();
-                        else audio.currentTime = Math.max(0, audio.currentTime - 5);
-                        break;
-                    case 'ArrowUp':
+                        playBtn.click(); break; case 'ArrowRight':
+                        e.preventDefault(); if (e.shiftKey) nextBtn.click(); else audio.currentTime = Math.min(audio
+                            .duration || 0, audio.currentTime + 5); break; case 'ArrowLeft':
+                        e.preventDefault(); if (e.shiftKey) prevBtn.click(); else audio.currentTime = Math.max(0, audio
+                            .currentTime - 5); break; case 'ArrowUp':
                         e.preventDefault();
                         audio.volume = Math.min(1, audio.volume + 0.1);
                         volumeSlider.value = audio.volume;
                         updateVolumeIcon();
-                        break;
-                    case 'ArrowDown':
+                        syncPlaybackState(); break; case 'ArrowDown':
                         e.preventDefault();
                         audio.volume = Math.max(0, audio.volume - 0.1);
                         volumeSlider.value = audio.volume;
                         updateVolumeIcon();
-                        break;
-                }
-            });
+                        syncPlaybackState(); break; } });
 
             // ============ INITIALIZATION ============
             function init() {
                 createSplashParticles();
-                createRain(['❤️', '💚', '🍌', '✨', '💫'], ['#1db954', '#ff5252', '#ffd740', '#69f0ae',
-                    '#ffffff'
-                ], 30);
+                createRain(['❤️', '💚', '🍌', '✨', '💫'], ['#1db954', '#ff5252', '#ffd740', '#69f0ae', '#ffffff'], 30);
                 audio.volume = 0.8;
                 volumeSlider.value = 0.8;
                 updateVolumeIcon();
                 applyTheme(playlist[0].accent, 0);
+                initCanvas();
+                renderLibrary();
+                renderWallEntries();
+                bottomNav.style.display = 'none';
+                const savedRomantic = localStorage.getItem('platano_romantic_mode');
+                if (savedRomantic === '1') { applyRomanticMode(true);
+                    romanticModeToggle.checked = true; }
+                const savedSyncActive = localStorage.getItem('platano_sync_active');
+                const savedSyncCode = localStorage.getItem('platano_sync_code');
+                if (savedSyncActive === '1' && savedSyncCode && firebaseAvailable && db) {
+                    syncSessionCode = savedSyncCode;
+                    isSyncActive = true;
+                    setupFirestoreSync();
+                    syncPresence('online');
+                }
+                updateSyncUI();
+                updateMiniPlayerInfo();
+                requestNotificationPermission();
             }
 
             init();
-
-            console.log('🍌 PLATANO MUSIC - Fusionado con lo mejor de ambos mundos');
-            console.log('💚 Credenciales: ' + VALID_EMAIL + ' / ' + VALID_PASSWORD);
-            console.log('🎵 Playlist: ' + playlist.length + ' canciones cargadas');
-            console.log('⌨️  Atajos: Espacio=Play | ←→=±5s | Shift+←→=Cambiar | ↑↓=Volumen');
+            console.log('🍌 PLATANO MUSIC - Full Sync Edition');
+            console.log('🎵 Playlist: ' + playlist.length + ' canciones cargadas desde GitHub (jsDelivr)');
+            console.log('🔗 Sincronización vía Firebase Firestore (requiere configuración real)');
+            console.log('📚 Biblioteca | 🏠 Pared | 🔗 Sync | ⚙ Ajustes');
+            console.log('📱 ID de dispositivo: ' + DEVICE_ID);
+            console.log('👥 Usuarios de prueba: ' + Object.keys(VALID_USERS).join(', '));
         })();
     </script>
 </body>
