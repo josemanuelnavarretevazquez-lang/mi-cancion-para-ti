@@ -18,12 +18,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIvCfjYwgUExBVEFOTyBNVVNJQyIsCiAgInNob3J0X25hbWUiOiAiUExBVEFOTyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMTkxNDE0IiwKICAidGhlbWVfY29sb3IiOiAiIzE5MTQxNCIsCiAgImRlc2NyaXB0aW9uIjogIk51ZXN0cmEgbcO6c2ljYSwgbnVlc3RybyBhbW9yLCBzaW5jcm9uaXphZG9zLiIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHRleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCc+8J+NjDwvdGV4dD48L3N2Zz4iLAogICAgInNpemVzIjogIjE5MngxOTIiLAogICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICB9XQp9">
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js">
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
     <style>
         :root {
@@ -2379,6 +2376,10 @@
         <div class="page-header"><h2>⚙ Ajustes</h2><div class="subtitle">Personaliza tu experiencia</div></div>
         <div class="settings-list">
             <div class="settings-item">
+                <span class="setting-icon">🌓</span><div><div class="setting-label">Modo oscuro / claro</div><div class="setting-desc">Alterna entre tema oscuro y claro</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="darkModeToggle"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="settings-item">
                 <span class="setting-icon">🌙</span><div><div class="setting-label">Modo romántico</div><div class="setting-desc">Tonos más íntimos y cálidos</div></div>
                 <label class="toggle-switch"><input type="checkbox" id="romanticModeToggle"><span class="toggle-slider"></span></label>
             </div>
@@ -2418,7 +2419,6 @@
     <script>
         (function() {
             // ============ FIREBASE CONFIG ============
-            // ⚠️ REEMPLAZA ESTOS VALORES CON TU PROYECTO DE FIREBASE ⚠️
             const firebaseConfig = {
                 apiKey: "AIzaSyPLACEHOLDER_REEMPLAZAR_CON_TU_API_KEY",
                 authDomain: "platano-music-app.firebaseapp.com",
@@ -2521,6 +2521,7 @@
             let lastSyncUpdateTime = 0;
             let isRemoteSyncUpdate = false;
             let remoteCursorTimeout = null;
+            let pendingAutoPlay = false;
 
             // ============ DOM ELEMENTS ============
             const $ = (id) => document.getElementById(id);
@@ -2575,6 +2576,7 @@
             const wallEraserBtn = $('wallEraserBtn');
             const wallSaveDrawingBtn = $('wallSaveDrawingBtn');
             const romanticModeToggle = $('romanticModeToggle');
+            const darkModeToggle = $('darkModeToggle');
             const settingsInstallBtn = $('settingsInstallBtn');
             const installModal = $('installModal');
             const installModalCloseBtn = $('installModalCloseBtn');
@@ -2635,9 +2637,13 @@
                 document.getElementById('modalCloseBtn').style.background = accentColor;
                 document.getElementById('modalCloseBtn').style.boxShadow = `0 6px 20px ${accentColor}66`;
                 playBtn.style.boxShadow = `0 6px 22px ${accentColor}80`;
-                if (trackIndex === 3) { player.classList.add('light-mode');
-                    body.classList.add('light-mode'); } else { player.classList.remove('light-mode');
-                    body.classList.remove('light-mode'); }
+                // Solo aplicar light mode automático si el usuario NO ha elegido manualmente el tema oscuro
+                const manualDarkMode = localStorage.getItem('platano_dark_mode');
+                if (!manualDarkMode || manualDarkMode === '0') {
+                    if (trackIndex === 3) { player.classList.add('light-mode');
+                        body.classList.add('light-mode'); } else { player.classList.remove('light-mode');
+                        body.classList.remove('light-mode'); }
+                }
                 if (isLiked) { likeBtn.style.color = '#e91e63'; } else { likeBtn.style.color = ''; }
             }
 
@@ -2665,17 +2671,45 @@
                 miniArtist.textContent = track.artist;
                 miniCover.src = track.cover;
                 applyTheme(track.accent, index);
-                createRain(track.rainItems, track.rainColors); const wasPlaying = isPlaying; if (wasPlaying) { audio
-                    .pause(); }
+                createRain(track.rainItems, track.rainColors);
+                // Guardar la intención de auto-reproducción
+                pendingAutoPlay = autoPlay;
+                // Pausar si estaba sonando
+                if (isPlaying) { audio.pause();
+                    isPlaying = false;
+                    coverImg.classList.remove('playing');
+                    progressFill.classList.remove('playing-bar');
+                    miniCover.classList.remove('playing'); }
                 audio.src = track.src;
                 audio.load();
                 progressFill.style.width = '0%';
                 currentTimeEl.textContent = '0:00';
                 durationEl.textContent = '0:00'; const currentCover = coverImg.src; const newCover = track.cover; if (
-                    currentCover.indexOf(newCover) === -1) { premiumTransition(track.cover, () => { if (autoPlay ||
-                            wasPlaying) { safePlay(); } }); } else { if (autoPlay || wasPlaying) { safePlay(); } } if (
-                    !autoPlay && !wasPlaying) { updatePlayButton(); }
+                    currentCover.indexOf(newCover) === -1) { premiumTransition(track.cover); } else { /* no transition needed */ }
+                updatePlayButton();
+                updateMiniPlayerInfo();
                 syncPlaybackState(); }
+
+            // Auto-play cuando el audio esté listo
+            audio.addEventListener('loadeddata', () => {
+                durationEl.textContent = formatTime(audio.duration);
+                if (pendingAutoPlay) {
+                    pendingAutoPlay = false;
+                    safePlay();
+                }
+            });
+
+            // Añadido: actualizar metadatos de Media Session cada vez que se cargue una nueva canción
+            audio.addEventListener('loadeddata', function() {
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: playlist[currentTrackIndex].title,
+                        artist: playlist[currentTrackIndex].artist,
+                        album: 'Platano Music',
+                        artwork: [{ src: playlist[currentTrackIndex].cover, sizes: '150x150', type: 'image/jpeg' }]
+                    });
+                }
+            });
 
             function safePlay() { const playPromise = audio.play(); if (playPromise !== undefined) { playPromise.then(
                     () => { isPlaying = true;
@@ -2683,12 +2717,14 @@
                         coverImg.classList.add('playing');
                         progressFill.classList.add('playing-bar');
                         miniCover.classList.add('playing');
+                        updateMiniPlayerInfo();
                         syncPlaybackState(); }).catch(err => { console.warn('Play prevented:', err);
                     isPlaying = false;
                     updatePlayButton();
                     coverImg.classList.remove('playing');
                     progressFill.classList.remove('playing-bar');
-                    miniCover.classList.remove('playing'); }); } }
+                    miniCover.classList.remove('playing');
+                    updateMiniPlayerInfo(); }); } }
 
             function updatePlayButton() { const icon = playBtn.querySelector('i'); const miniIcon = miniPlayBtn
             .querySelector('i'); if (isPlaying) { icon.className = 'fa-solid fa-pause';
@@ -2859,12 +2895,11 @@
 
             function enterApp() {
                 grantedScreen.classList.remove('active');
-                // No mostramos el reproductor grande, solo preparamos el audio y la info del mini player
-                playerWrapper.classList.remove('visible'); // por si acaso
+                playerWrapper.classList.remove('visible');
                 bottomNav.style.display = 'flex';
-                loadTrack(0, false); // carga la primera canción en segundo plano, sin reproducir
+                loadTrack(0, false);
                 updateMiniPlayerInfo();
-                showPage('home'); // abrimos directamente la pared de Inicio
+                showPage('home');
                 requestNotificationPermission();
             }
 
@@ -2899,12 +2934,14 @@
                 if (targetPage) { targetPage.classList.add('show'); }
                 document.querySelectorAll('.nav-item').forEach(item => { item.classList.remove('active-nav'); if (item
                         .dataset.page === pageName) { item.classList.add('active-nav'); } });
-                // Al navegar a cualquier página, ocultamos el reproductor grande
                 playerWrapper.classList.remove('visible');
                 if (pageName === 'home') { renderWallEntries(); }
                 if (pageName === 'library') { renderLibrary(); }
                 if (pageName === 'sync') { updateSyncUI(); }
-                if (pageName === 'settings') { romanticModeToggle.checked = body.classList.contains('romantic-mode'); }
+                if (pageName === 'settings') { 
+                    romanticModeToggle.checked = body.classList.contains('romantic-mode'); 
+                    darkModeToggle.checked = body.classList.contains('light-mode');
+                }
                 updateMiniPlayerVisibility();
             }
 
@@ -2912,7 +2949,6 @@
                 hideAllPages();
                 currentPage = null;
                 document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active-nav'));
-                // Mostramos el reproductor grande
                 playerWrapper.classList.add('visible');
                 playerWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 updateMiniPlayerVisibility();
@@ -3101,6 +3137,19 @@
                     '1' : '0'); } catch (e) {} }
             romanticModeToggle.addEventListener('change', () => { applyRomanticMode(romanticModeToggle.checked); });
 
+            // ============ DARK MODE TOGGLE (MANUAL) ============
+            function applyDarkMode(enabled) {
+                if (enabled) {
+                    body.classList.add('light-mode');
+                    player.classList.add('light-mode');
+                } else {
+                    body.classList.remove('light-mode');
+                    player.classList.remove('light-mode');
+                }
+                try { localStorage.setItem('platano_dark_mode', enabled ? '1' : '0'); } catch (e) {}
+            }
+            darkModeToggle.addEventListener('change', () => { applyDarkMode(darkModeToggle.checked); });
+
             // ============ INSTALL PROMPT ============
             window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault();
                 deferredPrompt = e; });
@@ -3116,7 +3165,7 @@
             installModal.addEventListener('click', (e) => { if (e.target === installModal) installModal.classList.remove(
                     'show'); });
 
-            // ============ SYNC SYSTEM ============
+            // ============ SYNC SYSTEM (SIN CAMBIOS) ============
             function updateSyncUI() {
                 if (isSyncActive && syncSessionCode) {
                     syncStatusDot.classList.remove('disconnected');
@@ -3189,8 +3238,6 @@
                 if (!db || !syncSessionCode) return;
                 cleanupFirestoreSync();
                 const sessionRef = db.collection('sessions').doc(syncSessionCode);
-
-                // Listen for presence changes
                 const presenceUnsub = sessionRef.collection('presence').onSnapshot(snapshot => {
                     let html = '';
                     let foundPartner = false;
@@ -3221,8 +3268,6 @@
                     partnerPresenceContainer.innerHTML = html;
                 }, err => { console.warn('Presence listener error:', err); });
                 firestoreUnsubscribers.push(presenceUnsub);
-
-                // Listen for playback sync
                 const playbackUnsub = sessionRef.collection('playback').doc('state').onSnapshot(doc => {
                     if (!doc.exists) return;
                     const data = doc.data();
@@ -3235,7 +3280,7 @@
                         coverImg.classList.remove('playing');
                         progressFill.classList.remove('playing-bar');
                         miniCover.classList.remove('playing');
-                        loadTrack(data.trackIndex, false);
+                        loadTrack(data.trackIndex, data.isPlaying || false);
                     }
                     if (data.isPlaying && !isPlaying) {
                         safePlay();
@@ -3263,8 +3308,6 @@
                     setTimeout(() => { isRemoteSyncUpdate = false; }, 300);
                 }, err => { console.warn('Playback listener error:', err); });
                 firestoreUnsubscribers.push(playbackUnsub);
-
-                // Listen for wall entries
                 const wallUnsub = sessionRef.collection('wall').orderBy('timestamp', 'desc').limit(50).onSnapshot(
                     snapshot => {
                         snapshot.docChanges().forEach(change => {
@@ -3301,8 +3344,6 @@
                         });
                     }, err => { console.warn('Wall listener error:', err); });
                 firestoreUnsubscribers.push(wallUnsub);
-
-                // Listen for drawing actions
                 const drawingUnsub = sessionRef.collection('drawing').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
                     snapshot.docChanges().forEach(change => {
                         if (change.type === 'added') {
@@ -3316,8 +3357,6 @@
                     });
                 }, err => { console.warn('Drawing listener error:', err); });
                 firestoreUnsubscribers.push(drawingUnsub);
-
-                // Listen for remote cursor
                 const cursorUnsub = sessionRef.collection('cursor').onSnapshot(snapshot => {
                     snapshot.forEach(doc => {
                         if (doc.id !== DEVICE_ID) {
@@ -3326,8 +3365,6 @@
                     });
                 }, err => { console.warn('Cursor listener error:', err); });
                 firestoreUnsubscribers.push(cursorUnsub);
-
-                // Listen for reactions
                 const reactionsUnsub = sessionRef.collection('reactions').orderBy('timestamp', 'asc').onSnapshot(
                     snapshot => {
                         snapshot.docChanges().forEach(change => {
@@ -3470,33 +3507,30 @@
                 updateMiniPlayerInfo();
                 syncPlaybackState(); });
 
-            nextBtn.addEventListener('click', () => { let nextIndex; if (isShuffle && shuffleOrder.length > 0) { const
-                        currentShufflePos = shuffleOrder.indexOf(currentTrackIndex); if (currentShufflePos < shuffleOrder
-                            .length - 1) { nextIndex = shuffleOrder[currentShufflePos + 1]; } else { shuffleOrder =
-                            generateShuffleOrder();
-                        nextIndex = shuffleOrder[0]; } } else { nextIndex = (currentTrackIndex + 1) % playlist.length; } const
-                    wasPlaying = isPlaying;
+            // Función unificada para cambiar de track (prev/next) con auto-reproducción
+            function changeTrack(direction) {
+                let targetIndex;
+                if (direction === 'next') {
+                    if (isShuffle && shuffleOrder.length > 0) { const currentShufflePos = shuffleOrder.indexOf(currentTrackIndex); if (currentShufflePos < shuffleOrder.length - 1) { targetIndex = shuffleOrder[currentShufflePos + 1]; } else { shuffleOrder = generateShuffleOrder();
+                        targetIndex = shuffleOrder[0]; } } else { targetIndex = (currentTrackIndex + 1) % playlist.length; }
+                } else {
+                    if (audio.currentTime > 3) { audio.currentTime = 0;
+                        progressFill.style.width = '0%';
+                        currentTimeEl.textContent = '0:00';
+                        syncPlaybackState(); return; } 
+                    if (isShuffle && shuffleOrder.length > 0) { const currentShufflePos = shuffleOrder.indexOf(currentTrackIndex); if (currentShufflePos > 0) { targetIndex = shuffleOrder[currentShufflePos - 1]; } else { targetIndex = shuffleOrder[shuffleOrder.length - 1]; } } else { targetIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length; }
+                }
+                const wasPlaying = isPlaying;
                 isPlaying = false;
                 coverImg.classList.remove('playing');
                 progressFill.classList.remove('playing-bar');
                 miniCover.classList.remove('playing');
-                loadTrack(nextIndex, wasPlaying);
-                updateMiniPlayerInfo(); });
+                loadTrack(targetIndex, true); // autoPlay = true
+                updateMiniPlayerInfo();
+            }
 
-            prevBtn.addEventListener('click', () => { if (audio.currentTime > 3) { audio.currentTime = 0;
-                    progressFill.style.width = '0%';
-                    currentTimeEl.textContent = '0:00';
-                    syncPlaybackState(); return; } let prevIndex; if (isShuffle && shuffleOrder.length > 0) { const
-                        currentShufflePos = shuffleOrder.indexOf(currentTrackIndex); if (currentShufflePos > 0) {
-                        prevIndex = shuffleOrder[currentShufflePos - 1]; } else { prevIndex = shuffleOrder[shuffleOrder
-                            .length - 1]; } } else { prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist
-                        .length; } const wasPlaying = isPlaying;
-                isPlaying = false;
-                coverImg.classList.remove('playing');
-                progressFill.classList.remove('playing-bar');
-                miniCover.classList.remove('playing');
-                loadTrack(prevIndex, wasPlaying);
-                updateMiniPlayerInfo(); });
+            nextBtn.addEventListener('click', () => changeTrack('next'));
+            prevBtn.addEventListener('click', () => changeTrack('prev'));
 
             shuffleBtn.addEventListener('click', () => { isShuffle = !isShuffle; if (isShuffle) { shuffleBtn.classList.add(
                         'active-ctrl');
@@ -3538,44 +3572,50 @@
             progressBar.addEventListener('touchmove', (e) => { e.preventDefault();
                 setProgressFromEvent(e); }, { passive: false });
 
-            audio.addEventListener('loadedmetadata', () => { durationEl.textContent = formatTime(audio.duration);
-                progressFill.style.width = '0%';
-                currentTimeEl.textContent = '0:00'; });
             audio.addEventListener('timeupdate', () => { if (audio.duration && isFinite(audio.duration)) { const fraction =
                         audio.currentTime / audio.duration;
                     progressFill.style.width = (fraction * 100) + '%';
                     currentTimeEl.textContent = formatTime(audio.currentTime); } if (isSyncActive && isPlaying && !isRemoteSyncUpdate &&
                     Date.now() - lastSyncUpdateTime > 2000) { syncPlaybackState(); } });
             audio.addEventListener('ended', () => { if (isRepeat) { audio.currentTime = 0;
-                    safePlay(); } else { nextBtn.click(); } });
+                    safePlay(); } else { changeTrack('next'); } });
             audio.addEventListener('play', () => { isPlaying = true;
                 updatePlayButton();
                 coverImg.classList.add('playing');
                 progressFill.classList.add('playing-bar');
                 miniCover.classList.add('playing');
+                updateMiniPlayerInfo();
                 syncPresence('playing');
-                syncPlaybackState(); });
+                syncPlaybackState();
+                startFloatingPhrases(); // AÑADIDO: inicia frases cuando el audio se reproduce
+            });
             audio.addEventListener('pause', () => { isPlaying = false;
                 updatePlayButton();
                 coverImg.classList.remove('playing');
                 progressFill.classList.remove('playing-bar');
                 miniCover.classList.remove('playing');
+                updateMiniPlayerInfo();
                 syncPresence('online');
-                syncPlaybackState(); });
+                syncPlaybackState();
+                stopFloatingPhrases(); // AÑADIDO: detiene frases cuando el audio se pausa
+            });
             audio.addEventListener('error', () => { isPlaying = false;
                 updatePlayButton();
                 coverImg.classList.remove('playing');
                 progressFill.classList.remove('playing-bar');
-                miniCover.classList.remove('playing'); });
+                miniCover.classList.remove('playing');
+                updateMiniPlayerInfo();
+                stopFloatingPhrases(); // AÑADIDO: detiene frases en caso de error
+            });
 
             document.addEventListener('keydown', (e) => { if (playerWrapper.classList.contains('hidden-initially'))
                     return; if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; switch (e.code) {
                     case 'Space':
                         e.preventDefault();
                         playBtn.click(); break; case 'ArrowRight':
-                        e.preventDefault(); if (e.shiftKey) nextBtn.click(); else audio.currentTime = Math.min(audio
+                        e.preventDefault(); if (e.shiftKey) changeTrack('next'); else audio.currentTime = Math.min(audio
                             .duration || 0, audio.currentTime + 5); break; case 'ArrowLeft':
-                        e.preventDefault(); if (e.shiftKey) prevBtn.click(); else audio.currentTime = Math.max(0, audio
+                        e.preventDefault(); if (e.shiftKey) changeTrack('prev'); else audio.currentTime = Math.max(0, audio
                             .currentTime - 5); break; case 'ArrowUp':
                         e.preventDefault();
                         audio.volume = Math.min(1, audio.volume + 0.1);
@@ -3587,6 +3627,126 @@
                         volumeSlider.value = audio.volume;
                         updateVolumeIcon();
                         syncPlaybackState(); break; } });
+
+            // ============ SWIPE GESTURES (Reproductor) ============
+            let swipeStartX = 0;
+            let swipeStartY = 0;
+            let swipeActive = false;
+
+            playerWrapper.addEventListener('touchstart', (e) => {
+                if (e.target.closest('button') || e.target.closest('.progress-container') || e.target.closest('#volumeSliderContainer') || e.target.closest('input')) return;
+                swipeStartX = e.touches[0].clientX;
+                swipeStartY = e.touches[0].clientY;
+                swipeActive = true;
+            }, { passive: true });
+
+            playerWrapper.addEventListener('touchmove', (e) => {
+                if (!swipeActive) return;
+                const deltaX = e.touches[0].clientX - swipeStartX;
+                const deltaY = e.touches[0].clientY - swipeStartY;
+                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+                    e.preventDefault();
+                    const offset = Math.max(-80, Math.min(80, deltaX * 0.5));
+                    playerWrapper.style.transition = 'none';
+                    playerWrapper.style.marginLeft = offset + 'px';
+                    playerWrapper.style.opacity = Math.max(0.3, 1 - Math.abs(offset) / 100);
+                }
+            }, { passive: false });
+
+            playerWrapper.addEventListener('touchend', (e) => {
+                if (!swipeActive) return;
+                swipeActive = false;
+                const deltaX = (e.changedTouches[0]?.clientX || swipeStartX) - swipeStartX;
+                const threshold = 55;
+                playerWrapper.style.transition = 'margin-left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2), opacity 0.4s ease';
+                if (Math.abs(deltaX) > threshold) {
+                    const direction = deltaX > 0 ? 'prev' : 'next';
+                    playerWrapper.style.marginLeft = (deltaX > 0 ? 120 : -120) + 'px';
+                    playerWrapper.style.opacity = '0';
+                    setTimeout(() => {
+                        playerWrapper.style.transition = 'none';
+                        playerWrapper.style.marginLeft = (deltaX > 0 ? -80 : 80) + 'px';
+                        changeTrack(direction);
+                        setTimeout(() => {
+                            playerWrapper.style.transition = 'margin-left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2), opacity 0.4s ease';
+                            playerWrapper.style.marginLeft = '0px';
+                            playerWrapper.style.opacity = '1';
+                            setTimeout(() => {
+                                playerWrapper.style.transition = 'opacity 0.7s ease, transform 0.7s ease, margin-left 0.35s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                            }, 420);
+                        }, 60);
+                    }, 280);
+                } else {
+                    playerWrapper.style.marginLeft = '0px';
+                    playerWrapper.style.opacity = '1';
+                }
+            });
+
+            // Swipe en páginas para cambiar de pestaña
+            const pageOrder = ['home', 'library', 'sync', 'settings'];
+            [pageHome, pageLibrary, pageSync, pageSettings].forEach(page => {
+                let pageSwipeStartX = 0;
+                let pageSwipeActive = false;
+                page.addEventListener('touchstart', (e) => {
+                    if (e.target.closest('button') || e.target.closest('textarea') || e.target.closest('input') || e.target.closest('canvas') || e.target.closest('.wall-color-dot')) return;
+                    pageSwipeStartX = e.touches[0].clientX;
+                    pageSwipeActive = true;
+                }, { passive: true });
+                page.addEventListener('touchend', (e) => {
+                    if (!pageSwipeActive) return;
+                    pageSwipeActive = false;
+                    const deltaX = (e.changedTouches[0]?.clientX || pageSwipeStartX) - pageSwipeStartX;
+                    const threshold = 70;
+                    if (Math.abs(deltaX) > threshold && currentPage) {
+                        const currentIdx = pageOrder.indexOf(currentPage);
+                        if (deltaX < 0 && currentIdx < pageOrder.length - 1) {
+                            showPage(pageOrder[currentIdx + 1]);
+                        } else if (deltaX > 0 && currentIdx > 0) {
+                            showPage(pageOrder[currentIdx - 1]);
+                        }
+                    }
+                });
+            });
+
+            // ============ MEDIA SESSION API (añadido para control por audífonos) ============
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: playlist[0].title,
+                    artist: playlist[0].artist,
+                    album: 'Platano Music',
+                    artwork: [{ src: playlist[0].cover, sizes: '150x150', type: 'image/jpeg' }]
+                });
+
+                navigator.mediaSession.setActionHandler('play', function() {
+                    if (!audio.src || audio.src === window.location.href) {
+                        loadTrack(currentTrackIndex, true);
+                    } else {
+                        safePlay();
+                    }
+                    updatePlayButton();
+                    updateMiniPlayerInfo();
+                    startFloatingPhrases();
+                });
+
+                navigator.mediaSession.setActionHandler('pause', function() {
+                    audio.pause();
+                    isPlaying = false;
+                    coverImg.classList.remove('playing');
+                    progressFill.classList.remove('playing-bar');
+                    miniCover.classList.remove('playing');
+                    updatePlayButton();
+                    updateMiniPlayerInfo();
+                    stopFloatingPhrases();
+                });
+
+                navigator.mediaSession.setActionHandler('previoustrack', function() {
+                    changeTrack('prev');
+                });
+
+                navigator.mediaSession.setActionHandler('nexttrack', function() {
+                    changeTrack('next');
+                });
+            }
 
             // ============ INITIALIZATION ============
             function init() {
@@ -3603,6 +3763,13 @@
                 const savedRomantic = localStorage.getItem('platano_romantic_mode');
                 if (savedRomantic === '1') { applyRomanticMode(true);
                     romanticModeToggle.checked = true; }
+                const savedDarkMode = localStorage.getItem('platano_dark_mode');
+                if (savedDarkMode === '1') {
+                    applyDarkMode(true);
+                    darkModeToggle.checked = true;
+                } else {
+                    darkModeToggle.checked = false;
+                }
                 const savedSyncActive = localStorage.getItem('platano_sync_active');
                 const savedSyncCode = localStorage.getItem('platano_sync_code');
                 if (savedSyncActive === '1' && savedSyncCode && firebaseAvailable && db) {
@@ -3623,6 +3790,7 @@
             console.log('📚 Biblioteca | 🏠 Pared | 🔗 Sync | ⚙ Ajustes');
             console.log('📱 ID de dispositivo: ' + DEVICE_ID);
             console.log('👥 Usuarios de prueba: ' + Object.keys(VALID_USERS).join(', '));
+            console.log('✨ Nuevo: Auto-reproducción al cambiar de canción, Modo oscuro/claro manual, Swipe gestures, Media Session API, Frases flotantes');
         })();
     </script>
 </body>
