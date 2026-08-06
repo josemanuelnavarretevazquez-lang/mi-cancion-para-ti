@@ -2343,24 +2343,19 @@
         </div>
     </div>
 
-    <!-- Page: Sync -->
+    <!-- Page: Sync (SIMPLIFICADA) -->
     <div id="pageSync">
-        <div class="page-header"><h2>🔗 Sincronización</h2><div class="subtitle">Conecta nuestros mundos</div></div>
+        <div class="page-header">
+            <h2>🔗 Sincronización</h2>
+            <div class="subtitle">Conectados automáticamente ❤️</div>
+        </div>
         <div class="sync-container">
             <div class="sync-card">
                 <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
                     <span class="sync-status-dot disconnected" id="syncStatusDot"></span>
                     <span style="font-weight:600;color:#fff;" id="syncStatusText">Desconectado</span>
                 </div>
-                <div class="sync-code-display" id="syncCodeDisplay">--------</div>
-                <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:10px;">Tu código de vinculación</p>
-                <button class="sync-btn activate" id="syncActivateBtn">🔗 Activar sincronización</button>
-                <button class="sync-btn deactivate" id="syncDeactivateBtn" style="display:none;">⏹ Desactivar</button>
-            </div>
-            <div class="sync-card">
-                <p style="font-size:0.8rem;color:#ccc;margin-bottom:8px;letter-spacing:1px;">Conectar con código</p>
-                <input type="text" class="sync-input" id="syncCodeInput" placeholder="PLATANO-XXXX" maxlength="14" autocomplete="off">
-                <button class="sync-btn connect" id="syncConnectBtn" style="margin-top:10px;">✨ Conectar</button>
+                <p style="font-size:0.75rem;color:var(--text-secondary);">Sesión compartida: PLATANO-AMOR</p>
             </div>
             <div class="sync-card" id="partnerStatusCard">
                 <p style="font-size:0.8rem;color:var(--text-secondary);letter-spacing:1px;">Estado del otro dispositivo</p>
@@ -2458,6 +2453,7 @@
             const DEVICE_ID = 'device_' + Math.random().toString(36).substr(2, 9);
             const DEVICE_NAME = localStorage.getItem('platano_device_name') || ('Dispositivo ' + DEVICE_ID.slice(-4)
                 .toUpperCase());
+            const SHARED_SYNC_CODE = "PLATANO-AMOR"; // Código fijo para sincronización automática
 
             const GITHUB_BASE = "https://cdn.jsdelivr.net/gh/josemanuelnavarretevazquez-lang/mi-cancion-para-ti@main/";
 
@@ -2589,7 +2585,6 @@
             const miniOpenBtn = $('miniOpenBtn');
             const syncStatusDot = $('syncStatusDot');
             const syncStatusText = $('syncStatusText');
-            const syncCodeDisplay = $('syncCodeDisplay');
             const syncActivateBtn = $('syncActivateBtn');
             const syncDeactivateBtn = $('syncDeactivateBtn');
             const syncCodeInput = $('syncCodeInput');
@@ -3166,24 +3161,40 @@
             installModal.addEventListener('click', (e) => { if (e.target === installModal) installModal.classList.remove(
                     'show'); });
 
+            // ============ AUTO SYNC ACTIVATION ============
+            function autoActivateSync() {
+                if (!firebaseAvailable || !db) {
+                    console.warn("Firebase no disponible, no se puede sincronizar");
+                    return;
+                }
+                syncSessionCode = SHARED_SYNC_CODE;
+                isSyncActive = true;
+                localStorage.setItem('platano_sync_code', syncSessionCode);
+                localStorage.setItem('platano_sync_active', '1');
+                updateSyncUI();
+                setupFirestoreSync();
+                syncPresence('online');
+                console.log('🔗 Sincronización automática activada con código:', syncSessionCode);
+            }
+
             // ============ SYNC SYSTEM (SIN CAMBIOS) ============
             function updateSyncUI() {
                 if (isSyncActive && syncSessionCode) {
                     syncStatusDot.classList.remove('disconnected');
                     syncStatusDot.classList.add('connected');
                     syncStatusText.textContent = 'Conectado';
-                    syncCodeDisplay.textContent = syncSessionCode;
-                    syncActivateBtn.style.display = 'none';
-                    syncDeactivateBtn.style.display = 'block';
-                    syncConnectBtn.disabled = true;
+                    if (syncCodeDisplay) syncCodeDisplay.textContent = syncSessionCode;
+                    if (syncActivateBtn) syncActivateBtn.style.display = 'none';
+                    if (syncDeactivateBtn) syncDeactivateBtn.style.display = 'block';
+                    if (syncConnectBtn) syncConnectBtn.disabled = true;
                 } else {
                     syncStatusDot.classList.remove('connected');
                     syncStatusDot.classList.add('disconnected');
                     syncStatusText.textContent = 'Desconectado';
-                    syncCodeDisplay.textContent = '--------';
-                    syncActivateBtn.style.display = 'block';
-                    syncDeactivateBtn.style.display = 'none';
-                    syncConnectBtn.disabled = false;
+                    if (syncCodeDisplay) syncCodeDisplay.textContent = '--------';
+                    if (syncActivateBtn) syncActivateBtn.style.display = 'block';
+                    if (syncDeactivateBtn) syncDeactivateBtn.style.display = 'none';
+                    if (syncConnectBtn) syncConnectBtn.disabled = false;
                 }
             }
 
@@ -3490,10 +3501,10 @@
                 } catch (e) {}
             }
 
-            syncActivateBtn.addEventListener('click', activateSync);
-            syncDeactivateBtn.addEventListener('click', deactivateSync);
-            syncConnectBtn.addEventListener('click', connectWithCode);
-            syncCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') connectWithCode(); });
+            if (syncActivateBtn) syncActivateBtn.addEventListener('click', activateSync);
+            if (syncDeactivateBtn) syncDeactivateBtn.addEventListener('click', deactivateSync);
+            if (syncConnectBtn) syncConnectBtn.addEventListener('click', connectWithCode);
+            if (syncCodeInput) syncCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') connectWithCode(); });
 
             // ============ EVENT LISTENERS ============
             document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { const page =
@@ -3517,6 +3528,7 @@
                     passwordInput.value.trim(); if (VALID_USERS[email.toUpperCase()] === password) {
                     loginError.textContent = '';
                     localStorage.setItem('platano_auth_user', email);
+                    autoActivateSync();  // Sincronización inmediata al iniciar sesión
                     localStorage.setItem('platano_sync_code', password);
                     loginScreen.classList.remove('active');
                     startHeartbeatSequence(); } else { loginError.textContent =
@@ -3799,16 +3811,21 @@
                     darkModeToggle.checked = false;
                 }
                 const savedSyncCode = localStorage.getItem('platano_sync_code');
+                // No reconectar automáticamente: la sesión se borra al salir, el login activa la sincronización.
                 if (savedSyncCode && firebaseAvailable && db) {
-                    syncSessionCode = savedSyncCode;
-                    isSyncActive = true;
-                    setupFirestoreSync();
-                    syncPresence('online');
-                    console.log('🍌 Reconectado automáticamente con código:', savedSyncCode);
-                } else {
-                    console.log('🔗 No hay código guardado. Esperando inicio de sesión.');
+                    console.log('🍌 Código guardado encontrado pero se requiere inicio de sesión.');
                 }
             } // ← fin de init()
+
+            // ============ FORZAR CIERRE DE SESIÓN AL SALIR ============
+            window.addEventListener('pagehide', () => {
+                localStorage.removeItem('platano_auth_user');
+                if (isSyncActive) deactivateSync();
+            });
+            window.addEventListener('beforeunload', () => {
+                localStorage.removeItem('platano_auth_user');
+                if (isSyncActive) deactivateSync();
+            });
 
             // ============ INICIAR APLICACIÓN (UNA SOLA VEZ) ============
             init();
