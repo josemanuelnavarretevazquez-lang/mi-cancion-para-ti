@@ -3235,52 +3235,67 @@
                 showLocalNotification('🔗 Conectado a sesión', 'Código: ' + syncSessionCode);
             }
 
-            function setupFirestoreSync() {
-                if (!db || !syncSessionCode) return;
-                cleanupFirestoreSync();
-                const sessionRef = db.collection('sessions').doc(syncSessionCode);
-                const presenceUnsub = sessionRef.collection('presence').onSnapshot(snapshot => {
-    let html = '';
-    let foundPartner = false;
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (doc.id !== DEVICE_ID) {
-            syncPartnerId = doc.id;
-            foundPartner = true;
-            let dotClass = 'online';
-            let label = 'Conectado';
-            let timeAgo = '';
+           function setupFirestoreSync() {
+    if (!db || !syncSessionCode) return;
+    cleanupFirestoreSync();
+    const sessionRef = db.collection('sessions').doc(syncSessionCode);
 
-            // Estados especiales
-            if (data.status === 'playing') { dotClass = 'playing'; label = '🎵 Escuchando música'; }
-            else if (data.status === 'drawing') { dotClass = 'drawing'; label = '✏ Dibujando'; }
-            else if (data.status === 'writing') { dotClass = 'writing'; label = '💬 Escribiendo'; }
-            else if (data.status === 'offline') {
-                dotClass = 'offline';
-                const diff = Date.now() - data.lastSeen;
-                const mins = Math.floor(diff / 60000);
-                if (mins < 1) timeAgo = ' hace menos de 1 minuto';
-                else if (mins === 1) timeAgo = ' hace 1 minuto';
-                else if (mins < 60) timeAgo = ` hace ${mins} minutos`;
-                else {
-                    const horas = Math.floor(mins / 60);
-                    timeAgo = ` hace ${horas} hora${horas > 1 ? 's' : ''}`;
+    // ============ PRESENCIA (estado en línea / desconectado) ============
+    const presenceUnsub = sessionRef.collection('presence').onSnapshot(snapshot => {
+        let html = '';
+        let foundPartner = false;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (doc.id !== DEVICE_ID) {
+                syncPartnerId = doc.id;
+                foundPartner = true;
+                let dotClass = 'online';
+                let label = 'Conectado';
+                let timeAgo = '';
+
+                // Estados especiales
+                if (data.status === 'playing') {
+                    dotClass = 'playing';
+                    label = '🎵 Escuchando música';
+                } else if (data.status === 'drawing') {
+                    dotClass = 'drawing';
+                    label = '✏ Dibujando';
+                } else if (data.status === 'writing') {
+                    dotClass = 'writing';
+                    label = '💬 Escribiendo';
+                } else if (data.status === 'offline') {
+                    dotClass = 'offline';
+                    const diff = Date.now() - data.lastSeen;
+                    const mins = Math.floor(diff / 60000);
+                    if (mins < 1) timeAgo = ' hace menos de 1 minuto';
+                    else if (mins === 1) timeAgo = ' hace 1 minuto';
+                    else if (mins < 60) timeAgo = ` hace ${mins} minutos`;
+                    else {
+                        const horas = Math.floor(mins / 60);
+                        timeAgo = ` hace ${horas} hora${horas > 1 ? 's' : ''}`;
                     }
-                     label = `Desconectado${timeAgo}`;
-                     }
+                    label = `Desconectado${timeAgo}`;
+                }
 
-                   html += `<span class="presence-indicator"><span class="pres-dot ${dotClass}"></span> ${data.deviceName||'Compañero'} - ${label}</span>`;
-                   }
-                   });
+                html += `<span class="presence-indicator"><span class="pres-dot ${dotClass}"></span> ${data.deviceName||'Compañero'} - ${label}</span>`;
+            }
+        });
 
-                  if (!foundPartner && syncPartnerId) {
-                  syncPartnerId = null;
-               }
-                 if (html === '') {
-                 html = '<span class="presence-indicator"><span class="pres-dot" style="background:#888;"></span> Esperando compañero...</span>';
-                    }
-                   partnerPresenceContainer.innerHTML = html;
-                }, err => { console.warn('Presence listener error:', err); });                firestoreUnsubscribers.push(presenceUnsub);
+        if (!foundPartner && syncPartnerId) {
+            syncPartnerId = null;
+        }
+
+        if (html === '') {
+            html = '<span class="presence-indicator"><span class="pres-dot" style="background:#888;"></span> Esperando compañero...</span>';
+        }
+
+        partnerPresenceContainer.innerHTML = html;
+    }, err => {
+        console.warn('Presence listener error:', err);
+    });
+
+    firestoreUnsubscribers.push(presenceUnsub);
                 const playbackUnsub = sessionRef.collection('playback').doc('state').onSnapshot(doc => {
                     if (!doc.exists) return;
                     const data = doc.data();
