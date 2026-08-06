@@ -3796,7 +3796,7 @@
                 console.log('🔗 No hay código guardado. Esperando inicio de sesión.');
             }
 
-            init();
+                        init();
             console.log('🍌 PLATANO MUSIC - Full Sync Edition');
             console.log('🎵 Playlist: ' + playlist.length + ' canciones cargadas desde GitHub (jsDelivr)');
             console.log('🔗 Sincronización vía Firebase Firestore (requiere configuración real)');
@@ -3804,6 +3804,15 @@
             console.log('📱 ID de dispositivo: ' + DEVICE_ID);
             console.log('👥 Usuarios de prueba: ' + Object.keys(VALID_USERS).join(', '));
             console.log('✨ Nuevo: Auto-reproducción al cambiar de canción, Modo oscuro/claro manual, Swipe gestures, Media Session API, Frases flotantes');
+
+            // ============ MARCAR OFFLINE AL CERRAR ============
+            window.addEventListener('beforeunload', () => {
+                if (isSyncActive && syncSessionCode && db) {
+                    syncPresence('offline');
+                    console.log('🔴 Marcado como offline');
+                }
+            });
+
         })();
     </script>
 </body>
