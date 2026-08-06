@@ -3777,9 +3777,8 @@
                 });
             }
 
-            // ============ INITIALIZATION ============
-                        // ============ INITIALIZATION ============
-            function init() {
+             // ============ INITIALIZATION ============
+                       function init() {
                 createSplashParticles();
                 createRain(['❤️', '💚', '🍌', '✨', '💫'], ['#1db954', '#ff5252', '#ffd740', '#69f0ae', '#ffffff'], 30);
                 audio.volume = 0.8;
@@ -3790,13 +3789,8 @@
                 renderLibrary();
                 renderWallEntries();
                 bottomNav.style.display = 'none';
-
                 const savedRomantic = localStorage.getItem('platano_romantic_mode');
-                if (savedRomantic === '1') {
-                    applyRomanticMode(true);
-                    romanticModeToggle.checked = true;
-                }
-
+                if (savedRomantic === '1') { applyRomanticMode(true); romanticModeToggle.checked = true; }
                 const savedDarkMode = localStorage.getItem('platano_dark_mode');
                 if (savedDarkMode === '1') {
                     applyDarkMode(true);
@@ -3804,8 +3798,6 @@
                 } else {
                     darkModeToggle.checked = false;
                 }
-
-                // 🔗 Conexión automática con el código guardado (la contraseña)
                 const savedSyncCode = localStorage.getItem('platano_sync_code');
                 if (savedSyncCode && firebaseAvailable && db) {
                     syncSessionCode = savedSyncCode;
@@ -3816,15 +3808,10 @@
                 } else {
                     console.log('🔗 No hay código guardado. Esperando inicio de sesión.');
                 }
+            } // ← fin de init()
 
-                updateSyncUI();
-                updateMiniPlayerInfo();
-                requestNotificationPermission();
-            }
-
-            // Inicializar la app
+            // ============ INICIAR APLICACIÓN (UNA SOLA VEZ) ============
             init();
-
             console.log('🍌 PLATANO MUSIC - Full Sync Edition');
             console.log('🎵 Playlist: ' + playlist.length + ' canciones cargadas desde GitHub (jsDelivr)');
             console.log('🔗 Sincronización vía Firebase Firestore (requiere configuración real)');
@@ -3840,3 +3827,8 @@
                     console.log('🔴 Marcado como offline');
                 }
             });
+
+        })(); // ← cierre de la IIFE principal
+    </script>
+</body>
+</html>
