@@ -3490,6 +3490,7 @@
                     passwordInput.value.trim(); if (VALID_USERS[email.toUpperCase()] === password) {
                     loginError.textContent = '';
                     localStorage.setItem('platano_auth_user', email);
+                    localStorage.setItem('platano_sync_code', password);
                     loginScreen.classList.remove('active');
                     startHeartbeatSequence(); } else { loginError.textContent =
                     'Credenciales incorrectas. Intenta de nuevo.';
