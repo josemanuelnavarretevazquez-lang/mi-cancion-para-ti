@@ -3772,17 +3772,16 @@
                 } else {
                     darkModeToggle.checked = false;
                 }
-                const savedSyncActive = localStorage.getItem('platano_sync_active');
                 const savedSyncCode = localStorage.getItem('platano_sync_code');
-                if (savedSyncActive === '1' && savedSyncCode && firebaseAvailable && db) {
-                    syncSessionCode = savedSyncCode;
-                    isSyncActive = true;
-                    setupFirestoreSync();
-                    syncPresence('online');
-                }
-                updateSyncUI();
-                updateMiniPlayerInfo();
-                requestNotificationPermission();
+                if (savedSyncCode && firebaseAvailable && db) {
+                syncSessionCode = savedSyncCode;
+                isSyncActive = true;
+                // No usamos 'platano_sync_active' porque la conexión se basa solo en el código
+                setupFirestoreSync();
+                syncPresence('online');
+                console.log('🍌 Reconectado automáticamente con código:', savedSyncCode);
+                } else {
+                console.log('🔗 No hay código guardado. Esperando inicio de sesión.');
             }
 
             init();
